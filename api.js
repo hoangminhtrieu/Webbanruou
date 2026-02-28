@@ -114,11 +114,11 @@ function isLoggedIn() { return !!localStorage.getItem('vinova_token'); }
 // ─── Integrate with existing app.js ──────────────────────────
 // Override doLogin to use real API
 window.doLogin = async function () {
-    const emailEl = document.querySelector('#loginForm input[type=email]');
-    const passwordEl = document.querySelector('#loginForm input[type=password]');
-    if (!emailEl || !passwordEl) return;
+    const usernameEl = document.getElementById('loginUsername');
+    const passwordEl = document.getElementById('loginPassword') || document.querySelector('#loginForm input[type=password]');
+    if (!usernameEl || !passwordEl) return;
     try {
-        const data = await API.auth.login({ email: emailEl.value, password: passwordEl.value });
+        const data = await API.auth.login({ username: usernameEl.value, password: passwordEl.value });
         saveAuth(data.token, data.user);
         window.closeLoginModal();
         window.showToast(`Chào mừng ${data.user.full_name}! 🍷`, 'success');
@@ -127,6 +127,7 @@ window.doLogin = async function () {
         window.showToast(err.message, 'error');
     }
 };
+
 
 window.doRegister = async function () {
     const form = document.getElementById('registerForm');
