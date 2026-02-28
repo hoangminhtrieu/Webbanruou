@@ -248,10 +248,10 @@ function renderProductListing() {
   if (state.filters.regions.length) products = products.filter(p => state.filters.regions.includes(p.region));
   // Apply sort
   const sort = document.getElementById('sortSelect')?.value || 'popular';
-  if (sort === 'price-asc') products.sort((a,b) => a.price - b.price);
-  else if (sort === 'price-desc') products.sort((a,b) => b.price - a.price);
-  else if (sort === 'rating') products.sort((a,b) => b.rating - a.rating);
-  else if (sort === 'newest') products.sort((a,b) => (b.vintage||0) - (a.vintage||0));
+  if (sort === 'price-asc') products.sort((a, b) => a.price - b.price);
+  else if (sort === 'price-desc') products.sort((a, b) => b.price - a.price);
+  else if (sort === 'rating') products.sort((a, b) => b.rating - a.rating);
+  else if (sort === 'newest') products.sort((a, b) => (b.vintage || 0) - (a.vintage || 0));
 
   document.getElementById('listingCount').textContent = `${products.length} sản phẩm`;
   container.innerHTML = products.map(p => productCardHTML(p)).join('');
@@ -265,7 +265,7 @@ function productCardHTML(p) {
     <div class="product-card__img-wrap">
       <img class="product-card__img" src="${p.img}" alt="${p.name}" onerror="this.src='images/placeholder.jpg'">
       ${p.badge ? `<div class="product-card__badge"><span class="badge badge--gold">${p.badge}</span></div>` : ''}
-      <button class="product-card__wishlist ${isWishlisted?'active':''}" data-wish="${p.id}" title="Thêm yêu thích">
+      <button class="product-card__wishlist ${isWishlisted ? 'active' : ''}" data-wish="${p.id}" title="Thêm yêu thích">
         ${isWishlisted ? '♥' : '♡'}
       </button>
       <div class="product-card__actions">
@@ -324,6 +324,9 @@ function renderProductDetail(id) {
   if (!p) return;
   const container = document.getElementById('productDetailContent');
   if (!container) return;
+  // Firebase: track product view
+  if (typeof window.trackProductView === 'function') window.trackProductView(p);
+  if (typeof window.saveProductViewToFirestore === 'function') window.saveProductViewToFirestore(p);
 
   const stars = '★'.repeat(Math.floor(p.rating)) + (p.rating % 1 >= 0.5 ? '½' : '') + '☆'.repeat(5 - Math.ceil(p.rating));
 
@@ -336,7 +339,7 @@ function renderProductDetail(id) {
       </div>
       <div class="gallery-thumbs">
         ${[p.img, p.img, p.img].map((img, i) => `
-          <div class="gallery-thumb ${i===0?'active':''}" onclick="switchThumb(this,'${img}')">
+          <div class="gallery-thumb ${i === 0 ? 'active' : ''}" onclick="switchThumb(this,'${img}')">
             <img src="${img}" alt="" onerror="this.src='images/placeholder.jpg'">
           </div>`).join('')}
       </div>
@@ -363,12 +366,12 @@ function renderProductDetail(id) {
         <div class="meta-item"><div class="meta-item__label">Nồng độ</div><div class="meta-item__value">${p.abv}%</div></div>
         <div class="meta-item"><div class="meta-item__label">Dung tích</div><div class="meta-item__value">${p.volume}</div></div>
         ${p.grape ? `<div class="meta-item"><div class="meta-item__label">Giống nho</div><div class="meta-item__value" style="font-size:.8rem">${p.grape}</div></div>` : ''}
-        <div class="meta-item"><div class="meta-item__label">Tồn kho</div><div class="meta-item__value" style="color:${p.stock<10?'#e88a8a':'var(--c-success)'}">${p.stock < 10 ? `⚠ ${p.stock} chai` : `✓ Còn hàng`}</div></div>
+        <div class="meta-item"><div class="meta-item__label">Tồn kho</div><div class="meta-item__value" style="color:${p.stock < 10 ? '#e88a8a' : 'var(--c-success)'}">${p.stock < 10 ? `⚠ ${p.stock} chai` : `✓ Còn hàng`}</div></div>
       </div>
       <div class="product-info__price">
         <span class="price-main" data-price="${p.price}">${formatPrice(p.price)}</span>
         ${p.oldPrice ? `<span class="price-old" data-price="${p.oldPrice}">${formatPrice(p.oldPrice)}</span>` : ''}
-        ${p.oldPrice ? `<span class="badge badge--red">-${Math.round((1-p.price/p.oldPrice)*100)}%</span>` : ''}
+        ${p.oldPrice ? `<span class="badge badge--red">-${Math.round((1 - p.price / p.oldPrice) * 100)}%</span>` : ''}
       </div>
       <div class="variant-selector">
         <div class="variant-selector__label">Dung tích</div>
@@ -496,6 +499,8 @@ function addToCart(id, qty = 1) {
   else state.cart.push({ id, qty, name: p.name, price: p.price, img: p.img, volume: p.volume });
   saveState(); updateCartBadge();
   showToast(`Đã thêm ${p.name} vào giỏ hàng`, 'success');
+  // Firebase Analytics: track add to cart
+  if (typeof window.trackAddToCart === 'function') window.trackAddToCart(p, qty);
   if (state.page === 'cart') renderCart();
 }
 
@@ -580,6 +585,24 @@ window.nextCheckoutStep = () => {
 };
 window.prevCheckoutStep = () => { if (state.checkoutStep > 1) goToCheckoutStep(state.checkoutStep - 1); };
 function completeOrder() {
+  const orderId = `VNV-${Date.now()}`;
+  const total = cartTotal();
+  const items = state.cart.map(i => ({ id: i.id, name: i.name, qty: i.qty, price: i.price }));
+
+  // Firebase Analytics: track purchase
+  if (typeof window.trackPurchase === 'function') window.trackPurchase(orderId, total, items);
+
+  // Firebase Firestore: save order
+  if (typeof window.saveOrderToFirestore === 'function') {
+    window.saveOrderToFirestore({
+      orderId,
+      total,
+      items,
+      currency: state.currency,
+      user: state.user ? state.user.email : 'guest',
+    });
+  }
+
   state.cart = []; saveState(); updateCartBadge();
   goToCheckoutStep(4);
   showToast('🎉 Đơn hàng đã được đặt thành công!', 'success', 5000);
@@ -602,14 +625,14 @@ function renderAdmin() {
 }
 
 function renderCharts() {
-  const months = ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'];
-  const revenue = [120,145,208,189,260,310,285,340,295,380,420,510];
+  const months = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
+  const revenue = [120, 145, 208, 189, 260, 310, 285, 340, 295, 380, 420, 510];
   const maxVal = Math.max(...revenue);
   const chart = document.getElementById('revenueChart');
   if (!chart) return;
-  chart.innerHTML = `<div class="chart-bar-wrap">${months.map((m,i) => `
+  chart.innerHTML = `<div class="chart-bar-wrap">${months.map((m, i) => `
     <div class="chart-bar-col">
-      <div class="chart-bar" style="height:${(revenue[i]/maxVal)*180}px;background:linear-gradient(to top,var(--c-red-wine),var(--c-gold))" title="${revenue[i]}M"></div>
+      <div class="chart-bar" style="height:${(revenue[i] / maxVal) * 180}px;background:linear-gradient(to top,var(--c-red-wine),var(--c-gold))" title="${revenue[i]}M"></div>
       <div class="chart-label">${m}</div>
     </div>`).join('')}</div>`;
 }
@@ -675,6 +698,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   // Navigate to hash page
   const hash = window.location.hash.replace('#', '') || 'home';
-  navigate(['home','products','cart','checkout','account','wine-club','admin','product-detail'].includes(hash) ? hash : 'home');
+  navigate(['home', 'products', 'cart', 'checkout', 'account', 'wine-club', 'admin', 'product-detail'].includes(hash) ? hash : 'home');
   console.log('%cVINOVA Premium Wine & Spirits', 'color:#c9a84c;font-size:1.2rem;font-weight:bold');
 });
