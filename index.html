@@ -1,0 +1,955 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VINOVA – Premium Wine & Spirits | Rượu Vang Cao Cấp</title>
+<meta name="description" content="VINOVA – Nền tảng bán rượu vang và rượu mạnh cao cấp hàng đầu. Hơn 500 loại rượu từ 30+ quốc gia. Giao hàng toàn quốc, bảo quản nhiệt độ chuẩn.">
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="VINOVA – Premium Wine & Spirits">
+<meta property="og:description" content="Khám phá bộ sưu tập rượu vang và rượu mạnh cao cấp nhất Việt Nam">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="style.css">
+<!-- Schema.org structured data for SEO -->
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Store","name":"VINOVA Premium Wine & Spirits","description":"Nền tảng bán rượu vang và rượu mạnh cao cấp","url":"https://vinova.vn","telephone":"+84-28-1234-5678","address":{"@type":"PostalAddress","streetAddress":"123 Nguyễn Huệ","addressLocality":"Quận 1","addressRegion":"TP. Hồ Chí Minh","addressCountry":"VN"}}
+</script>
+</head>
+<body>
+
+<!-- ════════ AGE GATE ════════ -->
+<div class="age-gate-overlay" id="ageGate" role="dialog" aria-modal="true" aria-label="Xác minh độ tuổi">
+  <div class="age-gate">
+    <div class="age-gate__icon">🍷</div>
+    <h2 class="age-gate__title serif">Chào mừng đến<br><em class="gold">VINOVA</em></h2>
+    <p class="age-gate__subtitle">Trang web này bán rượu — vui lòng xác nhận bạn đủ 18 tuổi trở lên để tiếp tục.</p>
+    <div class="age-gate__dob">
+      <select class="input" id="dobDay"><option value="">Ngày</option>
+        <script>for(let i=1;i<=31;i++)document.write(`<option>${i}</option>`)</script>
+      </select>
+      <select class="input" id="dobMonth"><option value="">Tháng</option>
+        <script>['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'].forEach((m,i)=>document.write(`<option value="${i+1}">${m}</option>`))</script>
+      </select>
+      <select class="input" id="dobYear"><option value="">Năm</option>
+        <script>for(let y=2007;y>=1920;y--)document.write(`<option>${y}</option>`)</script>
+      </select>
+    </div>
+    <div class="age-gate__actions">
+      <button class="btn btn--primary btn--lg" id="ageDobConfirm">✓ Xác nhận — Tôi đủ 18 tuổi</button>
+      <button class="btn btn--ghost" id="ageNo">Tôi chưa đủ 18 tuổi</button>
+    </div>
+    <p class="age-gate__legal">Bằng cách nhấp "Xác nhận", bạn đồng ý với <a href="#" style="color:var(--c-gold)">Điều khoản dịch vụ</a> và xác nhận rằng bạn đủ tuổi uống rượu hợp pháp tại địa phương. Uống có trách nhiệm.</p>
+  </div>
+</div>
+
+<!-- ════════ NAVBAR ════════ -->
+<nav class="navbar" role="navigation" aria-label="Main navigation">
+  <div class="navbar__inner">
+    <a class="navbar__logo" href="#" onclick="navigate('home');return false" aria-label="VINOVA Home">
+      <span class="navbar__logo-icon">🍷</span>
+      <div>
+        <span class="navbar__logo-text">VINOVA</span>
+        <span class="navbar__logo-sub">Premium Wine & Spirits</span>
+      </div>
+    </a>
+    <div class="navbar__menu" id="navMenu">
+      <a class="navbar__link active" data-page="home" href="#home">Trang chủ</a>
+      <a class="navbar__link" data-page="products" href="#products">Sản phẩm</a>
+      <a class="navbar__link" data-page="wine-club" href="#wine-club">Wine Club</a>
+      <a class="navbar__link" data-page="account" href="#account">Tài khoản</a>
+      <a class="navbar__link" data-page="admin" href="#admin">Quản trị</a>
+    </div>
+    <div class="navbar__actions">
+      <!-- Search -->
+      <div class="search-wrap" style="position:relative">
+        <input class="input" id="searchInput" placeholder="Tìm kiếm rượu..." style="width:200px;padding:.45rem .9rem;font-size:.83rem" aria-label="Search">
+        <div id="searchResults" class="hidden" style="position:absolute;top:calc(100% + 6px);right:0;width:320px;background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--radius-md);z-index:200;overflow:hidden;box-shadow:var(--shadow-card)"></div>
+      </div>
+      <!-- Currency -->
+      <select class="lang-selector" id="currencySelect" aria-label="Currency">
+        <option value="VND">₫ VND</option>
+        <option value="USD">$ USD</option>
+        <option value="EUR">€ EUR</option>
+      </select>
+      <!-- Wishlist -->
+      <button class="btn btn--icon btn--ghost" onclick="navigate('account')" title="Danh sách yêu thích" aria-label="Wishlist">♡</button>
+      <!-- Cart -->
+      <button class="btn btn--icon btn--primary navbar__cart-btn" onclick="navigate('cart')" title="Giỏ hàng" aria-label="Shopping Cart">
+        🛒<span class="cart-badge" style="display:none">0</span>
+      </button>
+      <!-- Login -->
+      <button class="btn btn--outline btn--sm" onclick="openLoginModal()">Đăng nhập</button>
+      <button class="hamburger" aria-label="Menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- ════════ TOAST CONTAINER ════════ -->
+<div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+<!-- ════════ LOGIN MODAL ════════ -->
+<div class="modal-overlay" id="loginModal">
+  <div class="modal">
+    <div class="modal__header">
+      <h3 class="serif">🍷 Đăng nhập</h3>
+      <button class="btn btn--icon btn--ghost" onclick="closeLoginModal()">✕</button>
+    </div>
+    <div style="display:flex;gap:.75rem;margin-bottom:1.5rem">
+      <button class="btn btn--primary" style="flex:1" id="loginTabBtn" onclick="switchAuthTab('login')">Đăng nhập</button>
+      <button class="btn btn--ghost" style="flex:1" id="registerTabBtn" onclick="switchAuthTab('register')">Đăng ký</button>
+    </div>
+    <div id="loginForm">
+      <div style="display:flex;flex-direction:column;gap:1rem">
+        <div class="input-group"><label>Email</label><input class="input" type="email" placeholder="email@example.com"></div>
+        <div class="input-group"><label>Mật khẩu</label><input class="input" type="password" placeholder="••••••••"></div>
+        <div style="display:flex;justify-content:space-between;font-size:.82rem"><label style="display:flex;gap:.4rem;align-items:center"><input type="checkbox"> Ghi nhớ</label><a href="#" style="color:var(--c-gold)">Quên mật khẩu?</a></div>
+        <button class="btn btn--primary btn--lg" onclick="doLogin()">Đăng nhập</button>
+        <div style="text-align:center;color:var(--c-muted);font-size:.82rem">— hoặc đăng nhập bằng —</div>
+        <div style="display:flex;gap:.5rem">
+          <button class="btn btn--ghost" style="flex:1">🔵 Google</button>
+          <button class="btn btn--ghost" style="flex:1">🔷 Facebook</button>
+        </div>
+      </div>
+    </div>
+    <div id="registerForm" style="display:none">
+      <div style="display:flex;flex-direction:column;gap:1rem">
+        <div class="input-row"><div class="input-group"><label>Họ</label><input class="input" placeholder="Nguyễn"></div><div class="input-group"><label>Tên</label><input class="input" placeholder="Văn A"></div></div>
+        <div class="input-group"><label>Email</label><input class="input" type="email" placeholder="email@example.com"></div>
+        <div class="input-group"><label>Số điện thoại</label><input class="input" type="tel" placeholder="0912 345 678"></div>
+        <div class="input-group"><label>Mật khẩu</label><input class="input" type="password" placeholder="Ít nhất 8 ký tự"></div>
+        <div style="font-size:.8rem;color:var(--c-muted)">✓ Đăng ký nghĩa là bạn xác nhận đủ 18 tuổi và đồng ý với Điều khoản của chúng tôi.</div>
+        <button class="btn btn--primary btn--lg" onclick="doRegister()">Tạo tài khoản</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     PAGE: HOME
+════════════════════════════════════ -->
+<div class="page-section active" id="page-home">
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero__bg">
+      <img class="hero__bg-img" src="images/hero_banner.jpg" alt="Premium Wine Collection">
+      <div class="hero__overlay"></div>
+    </div>
+    <div class="container">
+      <div class="hero__content animate-up">
+        <div class="hero__eyebrow">
+          <div class="hero__line"></div>
+          <span class="hero__eyebrow-text">Bộ sưu tập độc quyền 2025</span>
+        </div>
+        <h1 class="hero__title">Nghệ thuật <em>thưởng thức</em><br>từng giọt tinh hoa</h1>
+        <p class="hero__subtitle">Khám phá hơn 500 loại rượu vang và rượu mạnh cao cấp từ 30+ quốc gia. Được tuyển chọn bởi các sommelier đẳng cấp quốc tế.</p>
+        <div style="display:flex;gap:1rem;flex-wrap:wrap">
+          <button class="btn btn--primary btn--lg" onclick="navigate('products')">🍷 Khám phá ngay</button>
+          <button class="btn btn--outline btn--lg" onclick="navigate('wine-club')">★ Wine Club</button>
+        </div>
+        <div class="hero__stats">
+          <div><div class="hero__stat-num">500+</div><div class="hero__stat-label">Sản phẩm</div></div>
+          <div><div class="hero__stat-num">30+</div><div class="hero__stat-label">Quốc gia</div></div>
+          <div><div class="hero__stat-num">50K+</div><div class="hero__stat-label">Khách hàng</div></div>
+          <div><div class="hero__stat-num">4.9★</div><div class="hero__stat-label">Đánh giá</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Category Pills -->
+  <section class="section--sm" style="border-bottom:1px solid var(--c-border)">
+    <div class="container">
+      <div style="display:flex;gap:.75rem;overflow-x:auto;padding-bottom:.5rem;scrollbar-width:thin">
+        <button class="btn btn--primary" onclick="filterByType('all',this)">🍷 Tất cả</button>
+        <button class="btn btn--ghost" onclick="filterByType('red',this)">🔴 Vang đỏ</button>
+        <button class="btn btn--ghost" onclick="filterByType('white',this)">⚪ Vang trắng</button>
+        <button class="btn btn--ghost" onclick="filterByType('sparkling',this)">🥂 Champagne</button>
+        <button class="btn btn--ghost" onclick="filterByType('whisky',this)">🥃 Whisky</button>
+        <button class="btn btn--ghost" onclick="navigate('products')">→ Xem tất cả</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Featured Products -->
+  <section class="section">
+    <div class="container">
+      <div class="section-head">
+        <div class="section-head__tag">✦ Tuyển chọn đặc biệt</div>
+        <h2 class="section-head__title">Sản phẩm <span class="gold">nổi bật</span></h2>
+        <p class="section-head__sub">Được tuyển chọn bởi đội ngũ sommelier với tiêu chí khắt khe nhất</p>
+        <div class="divider"></div>
+      </div>
+      <div class="grid-4" id="featuredProducts"></div>
+      <div style="text-align:center;margin-top:2.5rem">
+        <button class="btn btn--outline btn--lg" onclick="navigate('products')">Xem toàn bộ bộ sưu tập →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Value Props -->
+  <section class="section--sm" style="background:var(--c-surface);border-top:1px solid var(--c-border);border-bottom:1px solid var(--c-border)">
+    <div class="container">
+      <div class="grid-4" style="text-align:center">
+        <div style="padding:1.5rem">
+          <div style="font-size:2.2rem;margin-bottom:.75rem">🌡</div>
+          <h4 class="serif" style="margin-bottom:.4rem;color:var(--c-cream)">Bảo quản nhiệt độ</h4>
+          <p style="font-size:.85rem;color:var(--c-muted)">Xe lạnh chuyên dụng 10-15°C, đảm bảo chất lượng từ kho đến tay bạn</p>
+        </div>
+        <div style="padding:1.5rem">
+          <div style="font-size:2.2rem;margin-bottom:.75rem">🔒</div>
+          <h4 class="serif" style="margin-bottom:.4rem;color:var(--c-cream)">Xác minh độ tuổi</h4>
+          <p style="font-size:.85rem;color:var(--c-muted)">Tuân thủ quy định bán rượu, yêu cầu xác nhận 18+ khi giao hàng</p>
+        </div>
+        <div style="padding:1.5rem">
+          <div style="font-size:2.2rem;margin-bottom:.75rem">🎁</div>
+          <h4 class="serif" style="margin-bottom:.4rem;color:var(--c-cream)">Gói quà cao cấp</h4>
+          <p style="font-size:.85rem;color:var(--c-muted)">Hộp quà sang trọng, thiệp cá nhân hóa cho mọi dịp</p>
+        </div>
+        <div style="padding:1.5rem">
+          <div style="font-size:2.2rem;margin-bottom:.75rem">⭐</div>
+          <h4 class="serif" style="margin-bottom:.4rem;color:var(--c-cream)">Sommelier tư vấn</h4>
+          <p style="font-size:.85rem;color:var(--c-muted)">Đội ngũ chuyên gia sẵn sàng tư vấn chọn rượu 24/7</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Promotions Banner -->
+  <section class="section">
+    <div class="container">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+        <div style="background:linear-gradient(135deg,#4e0f22,#7b1f3a);border-radius:var(--radius-lg);padding:2.5rem;position:relative;overflow:hidden;cursor:pointer" onclick="navigate('products')">
+          <div style="position:absolute;right:-20px;top:-20px;font-size:8rem;opacity:.1">🍷</div>
+          <span class="badge badge--gold" style="margin-bottom:1rem;display:inline-block">Flash Sale</span>
+          <h3 class="serif" style="color:var(--c-cream);margin-bottom:.5rem">Bordeaux Collection</h3>
+          <p style="color:rgba(255,255,255,.7);font-size:.9rem;margin-bottom:1.25rem">Giảm đến 30% bộ sưu tập Bordeaux 2018-2020. Chỉ còn 48 giờ!</p>
+          <button class="btn btn--primary">Xem ngay →</button>
+        </div>
+        <div style="background:linear-gradient(135deg,#1a1208,#3d2a0a);border-radius:var(--radius-lg);padding:2.5rem;position:relative;overflow:hidden;cursor:pointer" onclick="navigate('wine-club')">
+          <div style="position:absolute;right:-20px;top:-20px;font-size:8rem;opacity:.1">★</div>
+          <span class="badge badge--gold" style="margin-bottom:1rem;display:inline-block">Ưu đãi thành viên</span>
+          <h3 class="serif" style="color:var(--c-cream);margin-bottom:.5rem">Tham gia Wine Club</h3>
+          <p style="color:rgba(255,255,255,.7);font-size:.9rem;margin-bottom:1.25rem">Nhận hộp rượu tuyển chọn mỗi tháng, tiết kiệm 20% và ưu tiên đặt hàng sớm.</p>
+          <button class="btn btn--outline">Tìm hiểu thêm →</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Regions -->
+  <section class="section--sm" style="background:var(--c-surface)">
+    <div class="container">
+      <div class="section-head"><div class="section-head__tag">✦ Vùng rượu</div><h2 class="section-head__title">Khám phá theo <span class="gold">vùng</span></h2><div class="divider"></div></div>
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;justify-content:center">
+        <button class="card" style="padding:1.25rem 2rem;cursor:pointer;text-align:center;min-width:120px" onclick="navigate('products')"><div style="font-size:1.8rem">🇫🇷</div><div style="font-size:.85rem;font-weight:600;margin-top:.4rem">Pháp</div><div style="font-size:.72rem;color:var(--c-muted)">142 sản phẩm</div></button>
+        <button class="card" style="padding:1.25rem 2rem;cursor:pointer;text-align:center;min-width:120px" onclick="navigate('products')"><div style="font-size:1.8rem">🇮🇹</div><div style="font-size:.85rem;font-weight:600;margin-top:.4rem">Ý</div><div style="font-size:.72rem;color:var(--c-muted)">98 sản phẩm</div></button>
+        <button class="card" style="padding:1.25rem 2rem;cursor:pointer;text-align:center;min-width:120px" onclick="navigate('products')"><div style="font-size:1.8rem">🇺🇸</div><div style="font-size:.85rem;font-weight:600;margin-top:.4rem">Mỹ</div><div style="font-size:.72rem;color:var(--c-muted)">76 sản phẩm</div></button>
+        <button class="card" style="padding:1.25rem 2rem;cursor:pointer;text-align:center;min-width:120px" onclick="navigate('products')"><div style="font-size:1.8rem">🏴󠁧󠁢󠁳󠁣󠁴󠁿</div><div style="font-size:.85rem;font-weight:600;margin-top:.4rem">Scotland</div><div style="font-size:.72rem;color:var(--c-muted)">54 sản phẩm</div></button>
+        <button class="card" style="padding:1.25rem 2rem;cursor:pointer;text-align:center;min-width:120px" onclick="navigate('products')"><div style="font-size:1.8rem">🇪🇸</div><div style="font-size:.85rem;font-weight:600;margin-top:.4rem">Tây Ban Nha</div><div style="font-size:.72rem;color:var(--c-muted)">48 sản phẩm</div></button>
+        <button class="card" style="padding:1.25rem 2rem;cursor:pointer;text-align:center;min-width:120px" onclick="navigate('products')"><div style="font-size:1.8rem">🇨🇱</div><div style="font-size:.85rem;font-weight:600;margin-top:.4rem">Chile</div><div style="font-size:.72rem;color:var(--c-muted)">35 sản phẩm</div></button>
+        <button class="card" style="padding:1.25rem 2rem;cursor:pointer;text-align:center;min-width:120px" onclick="navigate('products')"><div style="font-size:1.8rem">🇳🇿</div><div style="font-size:.85rem;font-weight:600;margin-top:.4rem">New Zealand</div><div style="font-size:.72rem;color:var(--c-muted)">29 sản phẩm</div></button>
+        <button class="card" style="padding:1.25rem 2rem;cursor:pointer;text-align:center;min-width:120px" onclick="navigate('products')"><div style="font-size:1.8rem">🇩🇪</div><div style="font-size:.85rem;font-weight:600;margin-top:.4rem">Đức</div><div style="font-size:.72rem;color:var(--c-muted)">22 sản phẩm</div></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section class="section">
+    <div class="container">
+      <div class="section-head"><div class="section-head__tag">✦ Khách hàng nói gì</div><h2 class="section-head__title">Đánh giá <span class="gold">thực tế</span></h2><div class="divider"></div></div>
+      <div class="grid-3">
+        <div class="card"><div class="card__body">
+          <div style="color:var(--c-gold);font-size:1.1rem;margin-bottom:.75rem">★★★★★</div>
+          <p style="font-size:.92rem;color:var(--c-muted);font-style:italic;line-height:1.7;">"Chất lượng rượu vượt trội, đóng gói cẩn thận và giao đúng giờ. VINOVA là địa chỉ tôi tin tưởng cho mọi sự kiện quan trọng."</p>
+          <div style="display:flex;align-items:center;gap:.75rem;margin-top:1rem"><div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--c-gold),var(--c-red-wine));display:flex;align-items:center;justify-content:center;font-size:1rem">N</div><div><div style="font-size:.88rem;font-weight:600">Nguyễn Minh Tuấn</div><div style="font-size:.75rem;color:var(--c-muted)">CEO, Công ty TM Phước Thịnh</div></div></div>
+        </div></div>
+        <div class="card"><div class="card__body">
+          <div style="color:var(--c-gold);font-size:1.1rem;margin-bottom:.75rem">★★★★★</div>
+          <p style="font-size:.92rem;color:var(--c-muted);font-style:italic;line-height:1.7;">"Tôi đặt gói quà tặng cho đối tác nước ngoài — từ tư vấn chọn rượu đến gói hộp đều cực kỳ chuyên nghiệp. Đối tác rất ấn tượng!"</p>
+          <div style="display:flex;align-items:center;gap:.75rem;margin-top:1rem"><div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--c-gold),var(--c-red-wine));display:flex;align-items:center;justify-content:center;font-size:1rem">L</div><div><div style="font-size:.88rem;font-weight:600">Lê Thị Hương</div><div style="font-size:.75rem;color:var(--c-muted)">Giám đốc, First Hotel & Resort</div></div></div>
+        </div></div>
+        <div class="card"><div class="card__body">
+          <div style="color:var(--c-gold);font-size:1.1rem;margin-bottom:.75rem">★★★★★</div>
+          <p style="font-size:.92rem;color:var(--c-muted);font-style:italic;line-height:1.7;">"Wine Club thực sự xứng đáng! Mỗi tháng nhận được lô rượu được tuyển chọn kỹ với note mô tả rất chi tiết. Tuyệt vời cho người mới."</p>
+          <div style="display:flex;align-items:center;gap:.75rem;margin-top:1rem"><div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--c-gold),var(--c-red-wine));display:flex;align-items:center;justify-content:center;font-size:1rem">P</div><div><div style="font-size:.88rem;font-weight:600">Phạm Quang Hải</div><div style="font-size:.75rem;color:var(--c-muted)">Thành viên Wine Club Platinum</div></div></div>
+        </div></div>
+      </div>
+    </div>
+  </section>
+</div>
+<!-- END PAGE HOME -->
+
+<!-- ════════ PAGE: PRODUCTS ════════ -->
+<div class="page-section" id="page-products">
+  <div class="pt-nav"></div>
+  <div class="container section">
+    <div class="section-head"><div class="section-head__tag">✦ Bộ sưu tập</div><h2 class="section-head__title">Danh mục <span class="gold">sản phẩm</span></h2><div class="divider"></div></div>
+    <button class="btn btn--ghost btn--sm" id="filterMobileBtn" style="margin-bottom:1rem">⚙ Bộ lọc</button>
+    <div class="listing-layout">
+      <!-- Sidebar -->
+      <aside class="filter-sidebar">
+        <div style="font-weight:600;margin-bottom:1.25rem;font-size:.95rem">Bộ lọc nâng cao</div>
+        <div class="filter-group">
+          <div class="filter-group__title">Loại rượu</div>
+          <div class="filter-option"><input type="checkbox" data-filter="types" value="red"><label>🔴 Vang đỏ</label><span class="count">142</span></div>
+          <div class="filter-option"><input type="checkbox" data-filter="types" value="white"><label>⚪ Vang trắng</label><span class="count">98</span></div>
+          <div class="filter-option"><input type="checkbox" data-filter="types" value="sparkling"><label>🥂 Champagne/Sparkling</label><span class="count">54</span></div>
+          <div class="filter-option"><input type="checkbox" data-filter="types" value="whisky"><label>🥃 Whisky/Whiskey</label><span class="count">76</span></div>
+        </div>
+        <div class="filter-group">
+          <div class="filter-group__title">Quốc gia / Vùng</div>
+          <div class="filter-option"><input type="checkbox" data-filter="regions" value="Pháp"><label>🇫🇷 Pháp</label><span class="count">142</span></div>
+          <div class="filter-option"><input type="checkbox" data-filter="regions" value="Ý"><label>🇮🇹 Ý</label><span class="count">98</span></div>
+          <div class="filter-option"><input type="checkbox" data-filter="regions" value="Mỹ"><label>🇺🇸 Mỹ</label><span class="count">76</span></div>
+          <div class="filter-option"><input type="checkbox" data-filter="regions" value="Scotland"><label>🏴󠁧󠁢󠁳󠁣󠁴󠁿 Scotland</label><span class="count">54</span></div>
+          <div class="filter-option"><input type="checkbox" data-filter="regions" value="Chile"><label>🇨🇱 Chile</label><span class="count">35</span></div>
+          <div class="filter-option"><input type="checkbox" data-filter="regions" value="New Zealand"><label>🇳🇿 New Zealand</label><span class="count">29</span></div>
+        </div>
+        <div class="filter-group">
+          <div class="filter-group__title">Khoảng giá</div>
+          <div class="range-slider"><input type="range" min="0" max="100000000" value="100000000" step="500000"><div class="range-values"><span>0₫</span><span>100M₫</span></div></div>
+        </div>
+        <div class="filter-group">
+          <div class="filter-group__title">Điểm đánh giá</div>
+          <div class="filter-option"><input type="checkbox" data-filter="ratings" value="90"><label>90+ điểm (Outstanding)</label></div>
+          <div class="filter-option"><input type="checkbox" data-filter="ratings" value="95"><label>95+ điểm (Extraordinary)</label></div>
+          <div class="filter-option"><input type="checkbox" data-filter="ratings" value="98"><label>98+ điểm (Perfect</label></div>
+        </div>
+        <div class="filter-group">
+          <div class="filter-group__title">Vintage (Năm)</div>
+          <div class="filter-option"><input type="checkbox"><label>2020 - 2022</label></div>
+          <div class="filter-option"><input type="checkbox"><label>2015 - 2019</label></div>
+          <div class="filter-option"><input type="checkbox"><label>2010 - 2014</label></div>
+          <div class="filter-option"><input type="checkbox"><label>Trước 2010</label></div>
+        </div>
+        <button class="btn btn--outline" style="width:100%" onclick="resetFilters()">✕ Xóa bộ lọc</button>
+      </aside>
+      <!-- Main -->
+      <div class="listing-main">
+        <div class="listing-toolbar">
+          <span class="listing-count" id="listingCount">8 sản phẩm</span>
+          <div style="display:flex;align-items:center;gap:.75rem">
+            <select class="sort-select" id="sortSelect">
+              <option value="popular">Phổ biến nhất</option>
+              <option value="price-asc">Giá tăng dần</option>
+              <option value="price-desc">Giá giảm dần</option>
+              <option value="rating">Xếp hạng cao</option>
+              <option value="newest">Vintage mới nhất</option>
+            </select>
+            <div class="view-toggle">
+              <button class="view-btn active" title="Grid">⊞</button>
+              <button class="view-btn" title="List">☰</button>
+            </div>
+          </div>
+        </div>
+        <div class="grid-4" id="productGrid"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ PAGE: PRODUCT DETAIL ════════ -->
+<div class="page-section" id="page-product-detail">
+  <div class="pt-nav"></div>
+  <div class="container section">
+    <div id="productDetailContent"></div>
+    <section class="section--sm">
+      <h3 class="serif" style="margin-bottom:1.5rem">Sản phẩm <span class="gold">tương tự</span></h3>
+      <div class="grid-4" id="relatedProducts"></div>
+    </section>
+  </div>
+</div>
+
+
+<!-- ════════ PAGE: CART ════════ -->
+<div class="page-section" id="page-cart">
+  <div class="pt-nav"></div>
+  <div class="container section">
+    <h1 class="serif" style="margin-bottom:2rem">🛒 Giỏ hàng của bạn</h1>
+    <div class="cart-layout">
+      <div>
+        <div id="cartEmpty" style="text-align:center;padding:4rem;color:var(--c-muted)">
+          <div style="font-size:4rem;margin-bottom:1rem">🛒</div>
+          <h3 class="serif">Giỏ hàng trống</h3>
+          <p style="margin:.75rem 0 1.5rem">Hãy khám phá bộ sưu tập rượu cao cấp của chúng tôi</p>
+          <button class="btn btn--primary" onclick="navigate('products')">🍷 Khám phá ngay</button>
+        </div>
+        <div id="cartItems"></div>
+        <!-- Gift Options -->
+        <div class="card" style="margin-top:1.5rem">
+          <div class="card__body">
+            <h4 class="serif" style="margin-bottom:1rem">🎁 Tùy chọn quà tặng</h4>
+            <div style="display:flex;flex-direction:column;gap:.75rem">
+              <label style="display:flex;align-items:center;gap:.75rem;cursor:pointer;padding:.75rem;background:var(--c-surface2);border-radius:var(--radius-sm)">
+                <input type="checkbox" id="giftWrap" style="accent-color:var(--c-gold)">
+                <div><div style="font-size:.9rem;font-weight:500">Gói hộp quà cao cấp (+50,000₫)</div><div style="font-size:.78rem;color:var(--c-muted)">Hộp rượu sang trọng với nơ vàng</div></div>
+              </label>
+              <label style="display:flex;align-items:center;gap:.75rem;cursor:pointer;padding:.75rem;background:var(--c-surface2);border-radius:var(--radius-sm)">
+                <input type="checkbox" id="giftCard" style="accent-color:var(--c-gold)">
+                <div><div style="font-size:.9rem;font-weight:500">Thiệp chúc mừng cá nhân hóa (Miễn phí)</div><div style="font-size:.78rem;color:var(--c-muted)">In tên và lời nhắn của bạn</div></div>
+              </label>
+              <div id="giftCardMsg" style="display:none" class="input-group">
+                <label>Nội dung thiệp</label>
+                <textarea class="input" rows="2" placeholder="Ví dụ: Chúc mừng sinh nhật anh! Chúc anh sức khỏe và thành công..."></textarea>
+              </div>
+              <label style="display:flex;align-items:center;gap:.75rem;cursor:pointer;padding:.75rem;background:var(--c-surface2);border-radius:var(--radius-sm)">
+                <input type="checkbox" id="adultSignature" checked style="accent-color:var(--c-gold)">
+                <div><div style="font-size:.9rem;font-weight:500">✍ Yêu cầu chữ ký người lớn khi nhận (Bắt buộc)</div><div style="font-size:.78rem;color:var(--c-muted)">Người nhận phải xuất trình CMND/CCCD (18+)</div></div>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Order Summary -->
+      <div class="order-summary">
+        <h3 class="order-summary__title">Tóm tắt đơn hàng</h3>
+        <div class="summary-line"><span>Tạm tính</span><span id="summarySubtotal">0₫</span></div>
+        <div class="summary-line"><span>Phí vận chuyển</span><span id="summaryShipping">50,000₫</span></div>
+        <div class="summary-line"><span>Thuế TTĐB (10%)</span><span id="summaryTax">0₫</span></div>
+        <div class="promo-input">
+          <input class="input" placeholder="Mã ưu đãi" id="promoCode">
+          <button class="btn btn--outline btn--sm" onclick="applyPromo()">Áp dụng</button>
+        </div>
+        <div class="summary-line summary-line--total"><span>Tổng cộng</span><strong id="summaryTotal">0₫</strong></div>
+        <button class="btn btn--primary btn--lg" style="width:100%;margin-top:1rem" onclick="navigate('checkout')">Tiến hành thanh toán →</button>
+        <button class="btn btn--ghost" style="width:100%;margin-top:.75rem" onclick="navigate('products')">← Tiếp tục mua sắm</button>
+        <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--c-border)">
+          <div style="font-size:.8rem;color:var(--c-muted);text-align:center;line-height:1.6">🔒 Thanh toán bảo mật 256-bit SSL<br>💳 Hỗ trợ: Visa, Mastercard, VNPay, MoMo, ZaloPay<br>🚚 Giao hàng miễn phí đơn từ 5,000,000₫</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════ PAGE: CHECKOUT ════════ -->
+<div class="page-section" id="page-checkout">
+  <div class="pt-nav"></div>
+  <div class="container section--sm">
+    <h1 class="serif" style="margin-bottom:2rem">Thanh toán</h1>
+    <!-- Steps -->
+    <div class="checkout-steps" style="margin-bottom:2.5rem">
+      <div class="checkout-step active"><div class="step-circle">1</div><span class="step-label">Thông tin</span></div>
+      <div class="checkout-step"><div class="step-circle">2</div><span class="step-label">Vận chuyển</span></div>
+      <div class="checkout-step"><div class="step-circle">3</div><span class="step-label">Thanh toán</span></div>
+      <div class="checkout-step"><div class="step-circle">4</div><span class="step-label">Xác nhận</span></div>
+    </div>
+    <div class="checkout-layout">
+      <div>
+        <!-- Step 1 -->
+        <div class="checkout-panel active" id="checkout-step-1">
+          <div class="card"><div class="card__body">
+            <h3 class="serif" style="margin-bottom:1.5rem">📋 Thông tin người nhận</h3>
+            <div style="display:flex;flex-direction:column;gap:1rem">
+              <div class="input-row">
+                <div class="input-group"><label>Họ</label><input class="input" placeholder="Nguyễn"></div>
+                <div class="input-group"><label>Tên</label><input class="input" placeholder="Văn A"></div>
+              </div>
+              <div class="input-group"><label>Email</label><input class="input" type="email" placeholder="email@example.com"></div>
+              <div class="input-group"><label>Số điện thoại</label><input class="input" type="tel" placeholder="0912 345 678"></div>
+              <div class="input-group"><label>Địa chỉ</label><input class="input" placeholder="Số nhà, tên đường"></div>
+              <div class="input-row">
+                <div class="input-group"><label>Quận/Huyện</label><select class="input"><option>Quận 1</option><option>Quận 2</option><option>Quận 3</option><option>Quận Bình Thạnh</option></select></div>
+                <div class="input-group"><label>Tỉnh/Thành phố</label><select class="input"><option>TP. Hồ Chí Minh</option><option>Hà Nội</option><option>Đà Nẵng</option></select></div>
+              </div>
+              <div style="padding:.75rem;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.3);border-radius:var(--radius-sm);font-size:.85rem">
+                ⚠ <strong>Lưu ý:</strong> Rượu không được giao đến một số khu vực theo quy định địa phương. Hệ thống sẽ kiểm tra tự động.
+              </div>
+            </div>
+            <div style="margin-top:1.5rem;display:flex;justify-content:flex-end">
+              <button class="btn btn--primary btn--lg" onclick="nextCheckoutStep()">Tiếp theo →</button>
+            </div>
+          </div></div>
+        </div>
+        <!-- Step 2 -->
+        <div class="checkout-panel" id="checkout-step-2">
+          <div class="card"><div class="card__body">
+            <h3 class="serif" style="margin-bottom:1.5rem">🚚 Phương thức vận chuyển</h3>
+            <div style="display:flex;flex-direction:column;gap:.75rem">
+              <label style="display:flex;align-items:center;gap:1rem;padding:1rem;background:rgba(201,168,76,.06);border:1.5px solid var(--c-gold);border-radius:var(--radius-sm);cursor:pointer">
+                <input type="radio" name="shipping" value="express" checked style="accent-color:var(--c-gold)">
+                <div style="flex:1"><div style="font-weight:600">⚡ Giao hàng nhanh (2-4 giờ)</div><div style="font-size:.8rem;color:var(--c-muted)">Nội thành HCM/HN · Xe lạnh chuyên dụng</div></div>
+                <div style="font-weight:700;color:var(--c-gold)">50,000₫</div>
+              </label>
+              <label style="display:flex;align-items:center;gap:1rem;padding:1rem;background:var(--c-surface2);border:1px solid var(--c-border);border-radius:var(--radius-sm);cursor:pointer">
+                <input type="radio" name="shipping" value="standard" style="accent-color:var(--c-gold)">
+                <div style="flex:1"><div style="font-weight:600">📦 Tiêu chuẩn (1-3 ngày)</div><div style="font-size:.8rem;color:var(--c-muted)">Toàn quốc · Xe lạnh có bảo hiểm</div></div>
+                <div style="font-weight:700;color:var(--c-gold)">30,000₫</div>
+              </label>
+              <label style="display:flex;align-items:center;gap:1rem;padding:1rem;background:var(--c-surface2);border:1px solid var(--c-border);border-radius:var(--radius-sm);cursor:pointer">
+                <input type="radio" name="shipping" value="free" style="accent-color:var(--c-gold)">
+                <div style="flex:1"><div style="font-weight:600">🎁 Miễn phí (Đơn từ 5,000,000₫)</div><div style="font-size:.8rem;color:var(--c-muted)">3-5 ngày · Giao hàng có lịch hẹn</div></div>
+                <div style="font-weight:700;color:var(--c-success)">Miễn phí</div>
+              </label>
+            </div>
+            <div style="margin-top:1rem;padding:.75rem;background:rgba(46,125,106,.08);border:1px solid rgba(46,125,106,.3);border-radius:var(--radius-sm);font-size:.83rem">
+              🌡 Tất cả phương thức vận chuyển đều dùng xe lạnh chuyên dụng, duy trì nhiệt độ 10–15°C.
+              ✍ Người nhận phải xuất trình CMND/CCCD xác nhận đủ 18 tuổi.
+            </div>
+            <div style="margin-top:1.5rem;display:flex;justify-content:space-between">
+              <button class="btn btn--ghost" onclick="prevCheckoutStep()">← Quay lại</button>
+              <button class="btn btn--primary btn--lg" onclick="nextCheckoutStep()">Tiếp theo →</button>
+            </div>
+          </div></div>
+        </div>
+        <!-- Step 3 -->
+        <div class="checkout-panel" id="checkout-step-3">
+          <div class="card"><div class="card__body">
+            <h3 class="serif" style="margin-bottom:1.5rem">💳 Phương thức thanh toán</h3>
+            <div style="display:flex;flex-direction:column;gap:.75rem">
+              <label style="display:flex;align-items:center;gap:1rem;padding:1rem;background:rgba(201,168,76,.06);border:1.5px solid var(--c-gold);border-radius:var(--radius-sm);cursor:pointer">
+                <input type="radio" name="payment" value="card" checked style="accent-color:var(--c-gold)">
+                <span style="font-size:1.2rem">💳</span>
+                <div><div style="font-weight:600">Thẻ tín dụng / Ghi nợ</div><div style="font-size:.78rem;color:var(--c-muted)">Visa, Mastercard, JCB</div></div>
+              </label>
+              <label style="display:flex;align-items:center;gap:1rem;padding:1rem;background:var(--c-surface2);border:1px solid var(--c-border);border-radius:var(--radius-sm);cursor:pointer">
+                <input type="radio" name="payment" value="vnpay" style="accent-color:var(--c-gold)">
+                <span style="font-size:1.2rem">🏦</span>
+                <div><div style="font-weight:600">VNPay</div><div style="font-size:.78rem;color:var(--c-muted)">Thanh toán qua ví VNPay hoặc QR</div></div>
+              </label>
+              <label style="display:flex;align-items:center;gap:1rem;padding:1rem;background:var(--c-surface2);border:1px solid var(--c-border);border-radius:var(--radius-sm);cursor:pointer">
+                <input type="radio" name="payment" value="momo" style="accent-color:var(--c-gold)">
+                <span style="font-size:1.2rem">💜</span>
+                <div><div style="font-weight:600">MoMo</div><div style="font-size:.78rem;color:var(--c-muted)">Ví điện tử MoMo</div></div>
+              </label>
+              <label style="display:flex;align-items:center;gap:1rem;padding:1rem;background:var(--c-surface2);border:1px solid var(--c-border);border-radius:var(--radius-sm);cursor:pointer">
+                <input type="radio" name="payment" value="cod" style="accent-color:var(--c-gold)">
+                <span style="font-size:1.2rem">💵</span>
+                <div><div style="font-weight:600">Tiền mặt khi nhận hàng (COD)</div><div style="font-size:.78rem;color:var(--c-muted)">Thanh toán bằng tiền mặt khi nhận</div></div>
+              </label>
+            </div>
+            <div id="cardDetails" style="margin-top:1rem;display:flex;flex-direction:column;gap:1rem">
+              <div class="input-group"><label>Số thẻ</label><input class="input" placeholder="1234 5678 9012 3456" maxlength="19"></div>
+              <div class="input-row">
+                <div class="input-group"><label>Ngày hết hạn</label><input class="input" placeholder="MM/YY" maxlength="5"></div>
+                <div class="input-group"><label>CVV</label><input class="input" placeholder="•••" maxlength="4" type="password"></div>
+              </div>
+              <div class="input-group"><label>Tên chủ thẻ</label><input class="input" placeholder="NGUYEN VAN A"></div>
+            </div>
+            <div style="margin-top:1rem;font-size:.78rem;color:var(--c-muted)">🔒 Thông tin thẻ được mã hóa SSL 256-bit, tuân thủ tiêu chuẩn PCI-DSS.</div>
+            <div style="margin-top:1.5rem;display:flex;justify-content:space-between">
+              <button class="btn btn--ghost" onclick="prevCheckoutStep()">← Quay lại</button>
+              <button class="btn btn--primary btn--lg" onclick="nextCheckoutStep()">Đặt hàng ngay 🎉</button>
+            </div>
+          </div></div>
+        </div>
+        <!-- Step 4: Confirmation -->
+        <div class="checkout-panel" id="checkout-step-4">
+          <div style="text-align:center;padding:3rem">
+            <div style="font-size:4rem;margin-bottom:1rem">🎉</div>
+            <h2 class="serif gold">Đặt hàng thành công!</h2>
+            <p style="color:var(--c-muted);margin:1rem 0">Cảm ơn bạn đã tin tưởng VINOVA. Mã đơn hàng của bạn:</p>
+            <div style="font-size:1.5rem;font-weight:700;color:var(--c-gold);letter-spacing:.15em;margin:1rem 0">#VNV-2025-04821</div>
+            <p style="font-size:.88rem;color:var(--c-muted);max-width:400px;margin:0 auto 2rem">Chúng tôi đã gửi xác nhận đến email của bạn. Đơn hàng sẽ được giao trong 2-4 giờ bằng xe lạnh chuyên dụng.</p>
+            <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+              <button class="btn btn--primary" onclick="navigate('account')">📋 Theo dõi đơn hàng</button>
+              <button class="btn btn--outline" onclick="navigate('home')">🏠 Về trang chủ</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Summary sidebar stays -->
+      <div class="order-summary">
+        <h3 class="order-summary__title">Đơn hàng của bạn</h3>
+        <div class="summary-line"><span>Tạm tính</span><span id="summarySubtotal2">0₫</span></div>
+        <div class="summary-line"><span>Vận chuyển</span><span id="summaryShipping2">50,000₫</span></div>
+        <div class="summary-line"><span>Thuế TTĐB</span><span id="summaryTax2">0₫</span></div>
+        <div class="summary-line summary-line--total"><span>Tổng cộng</span><strong id="summaryTotal2">0₫</strong></div>
+        <div style="margin-top:1rem;padding:.75rem;background:var(--c-surface2);border-radius:var(--radius-sm);font-size:.78rem;color:var(--c-muted);line-height:1.6">
+          🔒 Bảo mật PCI-DSS · 🌡 Giao hàng xe lạnh · ✍ Xác minh 18+ khi nhận
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════ PAGE: ACCOUNT ════════ -->
+<div class="page-section" id="page-account">
+  <div class="pt-nav"></div>
+  <div class="container section">
+    <div style="display:grid;grid-template-columns:260px 1fr;gap:2rem;align-items:start">
+      <!-- Sidebar -->
+      <div class="card">
+        <div class="card__body" style="text-align:center;padding:2rem">
+          <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--c-gold),var(--c-red-wine));display:flex;align-items:center;justify-content:center;font-size:2rem;margin:0 auto 1rem">N</div>
+          <div style="font-weight:600;font-size:1.05rem">Nguyễn Văn A</div>
+          <div style="font-size:.82rem;color:var(--c-muted)">nguyen@example.com</div>
+          <div style="margin:.75rem 0"><span class="badge badge--gold">★ Thành viên Vàng</span></div>
+          <div style="font-size:.8rem;color:var(--c-muted)">Điểm tích lũy: <strong style="color:var(--c-gold)">4,850 points</strong></div>
+        </div>
+        <div class="card__footer" style="display:flex;flex-direction:column;gap:0">
+          <button class="admin-nav-item active">📋 Đơn hàng của tôi</button>
+          <button class="admin-nav-item">♡ Danh sách yêu thích</button>
+          <button class="admin-nav-item">📍 Địa chỉ giao hàng</button>
+          <button class="admin-nav-item">🔔 Thông báo</button>
+          <button class="admin-nav-item">★ Wine Club</button>
+          <button class="admin-nav-item">⚙ Cài đặt tài khoản</button>
+          <button class="admin-nav-item" style="color:var(--c-error)">→ Đăng xuất</button>
+        </div>
+      </div>
+      <!-- Content -->
+      <div>
+        <h2 class="serif" style="margin-bottom:1.5rem">📋 Đơn hàng của tôi</h2>
+        <div style="display:flex;flex-direction:column;gap:1rem">
+          <!-- Order item -->
+          <div class="card">
+            <div class="card__body">
+              <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem">
+                <div>
+                  <div style="font-weight:600">#VNV-2025-04820</div>
+                  <div style="font-size:.8rem;color:var(--c-muted)">25/01/2025 · 2 sản phẩm</div>
+                </div>
+                <span class="badge badge--green">✓ Đã giao hàng</span>
+                <div style="font-weight:700;color:var(--c-gold-light)">2,650,000₫</div>
+                <button class="btn btn--outline btn--sm">Chi tiết</button>
+              </div>
+              <div style="display:flex;gap:.75rem;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--c-border)">
+                <img src="images/red_wine.jpg" style="width:48px;height:64px;object-fit:cover;border-radius:4px" onerror="this.style.background='var(--c-surface2)'">
+                <div style="font-size:.88rem"><div style="font-weight:500">Opus One Reserve 2019</div><div style="color:var(--c-muted)">750ml × 1 · 12,800,000₫</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card__body">
+              <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem">
+                <div>
+                  <div style="font-weight:600">#VNV-2025-04715</div>
+                  <div style="font-size:.8rem;color:var(--c-muted)">18/01/2025 · 1 sản phẩm</div>
+                </div>
+                <span class="badge badge--gold">🚚 Đang vận chuyển</span>
+                <div style="font-weight:700;color:var(--c-gold-light)">7,200,000₫</div>
+                <button class="btn btn--outline btn--sm">Theo dõi</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card__body">
+              <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem">
+                <div>
+                  <div style="font-weight:600">#VNV-2025-04612</div>
+                  <div style="font-size:.8rem;color:var(--c-muted)">05/01/2025 · 3 sản phẩm</div>
+                </div>
+                <span class="badge badge--green">✓ Đã giao hàng</span>
+                <div style="font-weight:700;color:var(--c-gold-light)">4,250,000₫</div>
+                <button class="btn btn--outline btn--sm">Đánh giá</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ PAGE: WINE CLUB ════════ -->
+<div class="page-section" id="page-wine-club">
+  <div class="pt-nav"></div>
+  <section class="section" style="background:linear-gradient(180deg,var(--c-bg),var(--c-surface))">
+    <div class="container">
+      <div class="section-head">
+        <div class="section-head__tag">★ Đặc quyền thành viên</div>
+        <h1 class="section-head__title">VINOVA <span class="gold">Wine Club</span></h1>
+        <p class="section-head__sub">Nhận hộp rượu được tuyển chọn bởi sommelier mỗi tháng, kèm bộ dẫn nếm và ưu đãi độc quyền.</p>
+        <div class="divider"></div>
+      </div>
+      <div class="grid-3" style="margin-top:2rem">
+        <!-- Silver -->
+        <div class="club-card">
+          <h3 class="serif" style="margin-bottom:.4rem">Silver</h3>
+          <div style="font-size:.8rem;color:var(--c-muted);margin-bottom:1rem">Dành cho người mới bắt đầu</div>
+          <div class="club-price">990K<span>/tháng</span></div>
+          <div class="club-features">
+            <div class="club-feature">2 chai/tháng được tuyển chọn</div>
+            <div class="club-feature">Card mô tả hương vị chi tiết</div>
+            <div class="club-feature">Giảm 10% mua thêm</div>
+            <div class="club-feature">Tham gia webinar hàng tháng</div>
+          </div>
+          <button class="btn btn--outline" style="width:100%" onclick="showToast('Đã đăng ký gói Silver!','success')">Đăng ký</button>
+        </div>
+        <!-- Gold (featured) -->
+        <div class="club-card featured">
+          <div class="club-card__badge"><span class="badge badge--gold">Phổ biến nhất</span></div>
+          <h3 class="serif" style="margin-bottom:.4rem">Gold</h3>
+          <div style="font-size:.8rem;color:var(--c-muted);margin-bottom:1rem">Dành cho người yêu rượu</div>
+          <div class="club-price">1.990K<span>/tháng</span></div>
+          <div class="club-features">
+            <div class="club-feature">4 chai/tháng đa dạng vùng</div>
+            <div class="club-feature">Bộ tasting note chi tiết</div>
+            <div class="club-feature">Giảm 15% + 2x điểm thưởng</div>
+            <div class="club-feature">Ưu tiên đặt hàng rượu hiếm</div>
+            <div class="club-feature">Giao hàng miễn phí</div>
+          </div>
+          <button class="btn btn--primary" style="width:100%" onclick="showToast('Đã đăng ký gói Gold!','success')">Đăng ký ngay ★</button>
+        </div>
+        <!-- Platinum -->
+        <div class="club-card">
+          <h3 class="serif" style="margin-bottom:.4rem">Platinum</h3>
+          <div style="font-size:.8rem;color:var(--c-muted);margin-bottom:1rem">Dành cho nhà sưu tầm</div>
+          <div class="club-price">4.500K<span>/tháng</span></div>
+          <div class="club-features">
+            <div class="club-feature">6 chai/tháng + 1 chai hiếm</div>
+            <div class="club-feature">Sommelier tư vấn riêng 1-1</div>
+            <div class="club-feature">Giảm 20% + 3x điểm</div>
+            <div class="club-feature">Truy cập cellar tư nhân</div>
+            <div class="club-feature">Vé tham dự wine tasting event</div>
+          </div>
+          <button class="btn btn--outline" style="width:100%" onclick="showToast('Đã đăng ký gói Platinum!','success')">Đăng ký</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+
+<!-- ════════ PAGE: ADMIN ════════ -->
+<div class="page-section" id="page-admin">
+  <div class="pt-nav"></div>
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <nav class="admin-sidebar">
+      <div style="padding:1rem 1.25rem 1.5rem;border-bottom:1px solid var(--c-border)">
+        <div style="font-size:.75rem;color:var(--c-muted)">Xin chào,</div>
+        <div style="font-weight:600">Admin VINOVA</div>
+      </div>
+      <div style="padding:.75rem 0">
+        <div class="admin-sidebar__title" style="margin-top:.75rem">Tổng quan</div>
+        <div class="admin-nav-item active" data-section="dashboard"><span class="icon">📊</span> Dashboard</div>
+        <div class="admin-sidebar__title" style="margin-top:.75rem">Quản lý</div>
+        <div class="admin-nav-item" data-section="orders"><span class="icon">📋</span> Đơn hàng</div>
+        <div class="admin-nav-item" data-section="products-admin"><span class="icon">🍷</span> Sản phẩm</div>
+        <div class="admin-nav-item" data-section="inventory"><span class="icon">📦</span> Kho hàng</div>
+        <div class="admin-nav-item" data-section="customers"><span class="icon">👤</span> Khách hàng</div>
+        <div class="admin-sidebar__title" style="margin-top:.75rem">Vận hành</div>
+        <div class="admin-nav-item" data-section="reports"><span class="icon">📈</span> Báo cáo</div>
+        <div class="admin-nav-item" data-section="promotions"><span class="icon">🎁</span> Khuyến mãi</div>
+        <div class="admin-nav-item" data-section="settings"><span class="icon">⚙</span> Cài đặt</div>
+      </div>
+    </nav>
+    <!-- Main content -->
+    <main class="admin-content">
+      <!-- Dashboard -->
+      <div class="admin-section" id="admin-dashboard">
+        <div class="admin-header">
+          <h2 class="admin-header__title">📊 Dashboard</h2>
+          <div style="display:flex;gap:.75rem;align-items:center">
+            <select class="sort-select">
+              <option>Tháng này</option><option>Tháng trước</option><option>Quý này</option><option>Năm nay</option>
+            </select>
+            <button class="btn btn--primary btn--sm">+ Thêm sản phẩm</button>
+          </div>
+        </div>
+        <!-- KPIs -->
+        <div class="kpi-grid">
+          <div class="kpi-card"><span class="kpi-card__icon">💰</span><div class="kpi-card__label">Doanh thu tháng</div><div class="kpi-card__value">4.85 tỷ</div><div class="kpi-card__change up">↑ +18.5% so với tháng trước</div></div>
+          <div class="kpi-card"><span class="kpi-card__icon">📋</span><div class="kpi-card__label">Đơn hàng</div><div class="kpi-card__value">1,247</div><div class="kpi-card__change up">↑ +12.3%</div></div>
+          <div class="kpi-card"><span class="kpi-card__icon">👤</span><div class="kpi-card__label">Khách hàng mới</div><div class="kpi-card__value">342</div><div class="kpi-card__change up">↑ +8.7%</div></div>
+          <div class="kpi-card"><span class="kpi-card__icon">🛒</span><div class="kpi-card__label">Giá trị đơn TB (AOV)</div><div class="kpi-card__value">3.89M₫</div><div class="kpi-card__change down">↓ -2.1%</div></div>
+        </div>
+        <!-- Charts row -->
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:1.5rem;margin-bottom:1.5rem">
+          <div class="chart-placeholder">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+              <div style="font-size:.9rem;font-weight:600">Doanh thu 12 tháng (triệu ₫)</div>
+              <div style="display:flex;gap:.5rem">
+                <span class="badge badge--red">Năm nay</span>
+                <span class="badge badge--muted">Năm ngoái</span>
+              </div>
+            </div>
+            <div id="revenueChart"></div>
+          </div>
+          <div class="chart-placeholder">
+            <div style="font-size:.9rem;font-weight:600;margin-bottom:1rem">Danh mục bán chạy</div>
+            <div style="display:flex;flex-direction:column;gap:.75rem">
+              <div><div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:.3rem"><span>Vang đỏ</span><span>42%</span></div><div style="height:8px;background:var(--c-border);border-radius:4px"><div style="height:100%;width:42%;background:var(--c-red-wine);border-radius:4px"></div></div></div>
+              <div><div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:.3rem"><span>Champagne</span><span>28%</span></div><div style="height:8px;background:var(--c-border);border-radius:4px"><div style="height:100%;width:28%;background:var(--c-gold);border-radius:4px"></div></div></div>
+              <div><div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:.3rem"><span>Whisky</span><span>18%</span></div><div style="height:8px;background:var(--c-border);border-radius:4px"><div style="height:100%;width:18%;background:#3b82f6;border-radius:4px"></div></div></div>
+              <div><div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:.3rem"><span>Vang trắng</span><span>12%</span></div><div style="height:8px;background:var(--c-border);border-radius:4px"><div style="height:100%;width:12%;background:var(--c-success);border-radius:4px"></div></div></div>
+            </div>
+          </div>
+        </div>
+        <!-- Recent Orders -->
+        <div class="table-wrap">
+          <div style="padding:1rem 1.25rem;border-bottom:1px solid var(--c-border);display:flex;justify-content:space-between;align-items:center">
+            <span style="font-weight:600">Đơn hàng gần đây</span>
+            <button class="btn btn--ghost btn--sm">Xem tất cả</button>
+          </div>
+          <table class="data-table">
+            <thead><tr><th>Mã đơn</th><th>Khách hàng</th><th>Sản phẩm</th><th>Giá trị</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+            <tbody>
+              <tr><td>#VNV-04821</td><td>Nguyễn Văn A</td><td>Château Lafite × 1</td><td style="color:var(--c-gold-light)">18,500,000₫</td><td><span class="status-dot blue"></span>Xác nhận</td><td><button class="btn btn--sm btn--outline">Xử lý</button></td></tr>
+              <tr><td>#VNV-04820</td><td>Trần Thị B</td><td>Dom Pérignon × 2</td><td style="color:var(--c-gold-light)">14,400,000₫</td><td><span class="status-dot yellow"></span>Đang giao</td><td><button class="btn btn--sm btn--outline">Theo dõi</button></td></tr>
+              <tr><td>#VNV-04819</td><td>Lê Minh C</td><td>Opus One × 1</td><td style="color:var(--c-gold-light)">12,800,000₫</td><td><span class="status-dot green"></span>Hoàn thành</td><td><button class="btn btn--sm btn--outline">Chi tiết</button></td></tr>
+              <tr><td>#VNV-04818</td><td>Phạm Quang D</td><td>Macallan 25 × 1</td><td style="color:var(--c-gold-light)">52,000,000₫</td><td><span class="status-dot green"></span>Hoàn thành</td><td><button class="btn btn--sm btn--outline">Chi tiết</button></td></tr>
+              <tr><td>#VNV-04817</td><td>Hoàng Thu E</td><td>Cloudy Bay × 3</td><td style="color:var(--c-gold-light)">2,550,000₫</td><td><span class="status-dot red"></span>Hoàn tiền</td><td><button class="btn btn--sm btn--danger">Xử lý</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Hidden sections -->
+      <div class="admin-section hidden" id="admin-orders">
+        <div class="admin-header"><h2 class="admin-header__title">📋 Quản lý đơn hàng</h2><button class="btn btn--primary btn--sm">Xuất Excel</button></div>
+        <div style="display:flex;gap:.75rem;margin-bottom:1.25rem;flex-wrap:wrap">
+          <button class="btn btn--primary btn--sm">Tất cả (1,247)</button>
+          <button class="btn btn--ghost btn--sm">Chờ xác nhận (23)</button>
+          <button class="btn btn--ghost btn--sm">Đang giao (87)</button>
+          <button class="btn btn--ghost btn--sm">Hoàn thành (1,105)</button>
+          <button class="btn btn--ghost btn--sm">Hoàn tiền (32)</button>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Mã đơn</th><th>Thời gian</th><th>Khách hàng</th><th>Giá trị</th><th>Vận chuyển</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+            <tbody>
+              <tr><td>#VNV-04821</td><td>28/02 15:20</td><td>Nguyễn Văn A</td><td style="color:var(--c-gold-light)">18.5M₫</td><td>Nhanh 2h</td><td><span class="status-dot blue"></span>Xác nhận</td><td><button class="btn btn--sm btn--primary">Xác nhận</button></td></tr>
+              <tr><td>#VNV-04820</td><td>28/02 12:45</td><td>Trần Thị B</td><td style="color:var(--c-gold-light)">14.4M₫</td><td>Nhanh 2h</td><td><span class="status-dot yellow"></span>Đang giao</td><td><button class="btn btn--sm btn--outline">Theo dõi</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="admin-section hidden" id="admin-products-admin">
+        <div class="admin-header"><h2 class="admin-header__title">🍷 Quản lý sản phẩm</h2><button class="btn btn--primary btn--sm">+ Thêm sản phẩm</button></div>
+        <div style="margin-bottom:1rem;display:flex;gap:.75rem">
+          <input class="input" placeholder="Tìm theo tên, SKU, vùng..." style="max-width:300px">
+          <select class="sort-select"><option>Lọc theo loại</option><option>Vang đỏ</option><option>Vang trắng</option><option>Whisky</option></select>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>SKU</th><th>Tên sản phẩm</th><th>Vùng</th><th>Giá</th><th>Tồn kho</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+            <tbody>
+              <tr><td>CH-LAF-18</td><td>Château Lafite Rothschild 2018</td><td>Bordeaux, Pháp</td><td>18,500,000₫</td><td style="color:var(--c-warn)">12 chai</td><td><span class="badge badge--green">Có hàng</span></td><td><button class="btn btn--sm btn--outline">Sửa</button></td></tr>
+              <tr><td>DRC-2017</td><td>Domaine de la Romanée-Conti 2017</td><td>Burgundy, Pháp</td><td>95,000,000₫</td><td style="color:var(--c-error)">3 chai</td><td><span class="badge badge--red">Gần hết</span></td><td><button class="btn btn--sm btn--outline">Sửa</button></td></tr>
+              <tr><td>MCL-25</td><td>Macallan 25 Year Sherry Oak</td><td>Speyside, Scotland</td><td>52,000,000₫</td><td style="color:var(--c-error)">5 chai</td><td><span class="badge badge--red">Gần hết</span></td><td><button class="btn btn--sm btn--outline">Sửa</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="admin-section hidden" id="admin-reports">
+        <div class="admin-header"><h2 class="admin-header__title">📈 Báo cáo & Phân tích</h2></div>
+        <div class="kpi-grid">
+          <div class="kpi-card"><div class="kpi-card__label">Tỷ lệ chuyển đổi (CR)</div><div class="kpi-card__value">3.2%</div><div class="kpi-card__change up">↑ +0.4%</div></div>
+          <div class="kpi-card"><div class="kpi-card__label">Giá trị đơn TB (AOV)</div><div class="kpi-card__value">3.89M₫</div><div class="kpi-card__change down">↓ -2.1%</div></div>
+          <div class="kpi-card"><div class="kpi-card__label">LTV trung bình</div><div class="kpi-card__value">48.5M₫</div><div class="kpi-card__change up">↑ +5.2%</div></div>
+          <div class="kpi-card"><div class="kpi-card__label">Tỷ lệ hoàn trả</div><div class="kpi-card__value">2.1%</div><div class="kpi-card__change up">↓ -0.3%</div></div>
+        </div>
+      </div>
+      <div class="admin-section hidden" id="admin-inventory"><div class="admin-header"><h2 class="admin-header__title">📦 Quản lý kho hàng</h2></div><p style="color:var(--c-muted)">Quản lý tồn kho theo lô (batch/vintage), số chai, vị trí kho và lịch sử nhập xuất.</p></div>
+      <div class="admin-section hidden" id="admin-customers"><div class="admin-header"><h2 class="admin-header__title">👤 Khách hàng</h2></div><p style="color:var(--c-muted)">Quản lý CRM khách hàng, phân nhóm và hành vi mua hàng.</p></div>
+      <div class="admin-section hidden" id="admin-promotions"><div class="admin-header"><h2 class="admin-header__title">🎁 Khuyến mãi</h2></div><p style="color:var(--c-muted)">Tạo và quản lý mã giảm giá, flash sale, và chương trình tích điểm.</p></div>
+      <div class="admin-section hidden" id="admin-settings"><div class="admin-header"><h2 class="admin-header__title">⚙ Cài đặt hệ thống</h2></div><p style="color:var(--c-muted)">Cấu hình thuế tiêu thụ đặc biệt, khu vực giao hàng, phương thức thanh toán và tuân thủ pháp lý.</p></div>
+    </main>
+  </div>
+</div>
+
+
+<!-- ════════ FOOTER (shown on all pages) ════════ -->
+<footer class="footer" id="mainFooter">
+  <div class="container">
+    <div class="footer__grid">
+      <div>
+        <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem">
+          <span style="font-size:1.6rem">🍷</span>
+          <span style="font-family:var(--font-serif);font-size:1.4rem;font-weight:700;background:linear-gradient(135deg,var(--c-gold),var(--c-gold-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">VINOVA</span>
+        </div>
+        <p class="footer__brand-desc">Nền tảng bán rượu vang và rượu mạnh cao cấp hàng đầu Việt Nam. Hơn 500 sản phẩm từ 30+ quốc gia, cam kết chất lượng và tuân thủ pháp lý.</p>
+        <div class="footer__social">
+          <a href="#" class="social-icon" aria-label="Facebook">f</a>
+          <a href="#" class="social-icon" aria-label="Instagram">📷</a>
+          <a href="#" class="social-icon" aria-label="YouTube">▶</a>
+          <a href="#" class="social-icon" aria-label="TikTok">♪</a>
+        </div>
+        <div style="margin-top:1.25rem">
+          <div class="footer__heading">Đăng ký nhận ưu đãi</div>
+          <div class="newsletter-form">
+            <input class="input" type="email" placeholder="Email của bạn...">
+            <button class="btn btn--primary btn--sm" onclick="showToast('Đã đăng ký nhận bản tin!','success')">Đăng ký</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="footer__heading">Sản phẩm</div>
+        <div class="footer__links">
+          <a href="#" class="footer__link" onclick="navigate('products');return false">Rượu vang đỏ</a>
+          <a href="#" class="footer__link" onclick="navigate('products');return false">Rượu vang trắng</a>
+          <a href="#" class="footer__link" onclick="navigate('products');return false">Champagne</a>
+          <a href="#" class="footer__link" onclick="navigate('products');return false">Whisky & Rượu mạnh</a>
+          <a href="#" class="footer__link" onclick="navigate('wine-club');return false">Wine Club</a>
+        </div>
+      </div>
+      <div>
+        <div class="footer__heading">Hỗ trợ</div>
+        <div class="footer__links">
+          <a href="#" class="footer__link">Chính sách giao hàng</a>
+          <a href="#" class="footer__link">Chính sách hoàn trả</a>
+          <a href="#" class="footer__link">Hướng dẫn bảo quản rượu</a>
+          <a href="#" class="footer__link">Câu hỏi thường gặp</a>
+          <a href="#" class="footer__link">Liên hệ chúng tôi</a>
+        </div>
+      </div>
+      <div>
+        <div class="footer__heading">Pháp lý</div>
+        <div class="footer__links">
+          <a href="#" class="footer__link">Điều khoản dịch vụ</a>
+          <a href="#" class="footer__link">Chính sách bảo mật</a>
+          <a href="#" class="footer__link">Xác minh độ tuổi</a>
+          <a href="#" class="footer__link">Giấy phép kinh doanh rượu</a>
+          <a href="#" class="footer__link">Quy định thuế TTĐB</a>
+        </div>
+        <div style="margin-top:1.25rem;padding:.75rem;background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);border-radius:var(--radius-sm);font-size:.75rem;color:var(--c-muted);line-height:1.6">
+          🔞 Chúng tôi không bán rượu cho người dưới 18 tuổi. Uống rượu có trách nhiệm.
+        </div>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span>© 2025 VINOVA Premium Wine & Spirits. Mọi quyền được bảo lưu.</span>
+      <div style="display:flex;gap:1rem;font-size:.75rem;">
+        <span>🔒 PCI-DSS</span><span>🌐 TLS 1.3</span><span>🛡 PDPA</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- ════════ SCRIPTS ════════ -->
+<script src="api.js"></script>`n<script src="app.js"></script>
+<script>
+// Helper functions that depend on DOM
+window.openLoginModal = () => document.getElementById('loginModal').classList.add('open');
+window.closeLoginModal = () => document.getElementById('loginModal').classList.remove('open');
+window.switchAuthTab = (tab) => {
+  document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
+  document.getElementById('registerForm').style.display = tab === 'register' ? 'block' : 'none';
+  document.getElementById('loginTabBtn').className = tab === 'login' ? 'btn btn--primary' : 'btn btn--ghost';
+  document.getElementById('registerTabBtn').className = tab === 'register' ? 'btn btn--primary' : 'btn btn--ghost';
+};
+window.doLogin = () => { closeLoginModal(); showToast('Đăng nhập thành công! Chào mừng trở lại 🍷', 'success'); };
+window.doRegister = () => { closeLoginModal(); showToast('Tạo tài khoản thành công!', 'success'); };
+window.applyPromo = () => { const c = document.getElementById('promoCode').value; if (c.toUpperCase() === 'VINOVA10') showToast('Áp dụng mã giảm 10% thành công!', 'success'); else showToast('Mã không hợp lệ', 'error'); };
+window.resetFilters = () => { state.filters = { types: [], regions: [], grapes: [], priceMin: 0, priceMax: 50000000, abvMin: 0, abvMax: 60, ratings: [] }; document.querySelectorAll('.filter-option input').forEach(cb => cb.checked = false); renderProductListing(); showToast('Đã xóa bộ lọc', 'info'); };
+window.filterByType = (type, btn) => {
+  document.querySelectorAll('.section--sm .btn').forEach(b => { b.className = b === btn ? 'btn btn--primary' : 'btn btn--ghost'; });
+  state.filters.types = type === 'all' ? [] : [type];
+  navigate('products');
+};
+// Gift card toggle
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('giftCard')?.addEventListener('change', (e) => {
+    const el = document.getElementById('giftCardMsg');
+    if (el) el.style.display = e.target.checked ? 'block' : 'none';
+  });
+  // Checkout summary sync
+  ['summarySubtotal','summaryShipping','summaryTax','summaryTotal'].forEach(id => {
+    const src = document.getElementById(id);
+    const dst = document.getElementById(id + '2');
+    if (src && dst) { const obs = new MutationObserver(() => dst.textContent = src.textContent); obs.observe(src, { childList: true, characterData: true, subtree: true }); }
+  });
+  // Admin nav
+  document.addEventListener('click', (e) => {
+    if (e.target.matches('.modal-overlay')) e.target.classList.remove('open');
+  });
+});
+window.showToast = showToast;
+</script>
+</body>
+</html>
