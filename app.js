@@ -384,7 +384,37 @@ const PRODUCTS = [
 ];
 
 
+// ─── COUNTRY FLAG MAP ─────────────────────────────────────────
+const FLAGS = {
+  'Pháp': '<img src="https://flagcdn.com/w20/fr.png" srcset="https://flagcdn.com/w40/fr.png 2x" alt="Pháp" class="flag-icon">',
+  'France': '<img src="https://flagcdn.com/w20/fr.png" srcset="https://flagcdn.com/w40/fr.png 2x" alt="Pháp" class="flag-icon">',
+  'Ý': '<img src="https://flagcdn.com/w20/it.png" srcset="https://flagcdn.com/w40/it.png 2x" alt="Ý" class="flag-icon">',
+  'Italy': '<img src="https://flagcdn.com/w20/it.png" srcset="https://flagcdn.com/w40/it.png 2x" alt="Ý" class="flag-icon">',
+  'Mỹ': '<img src="https://flagcdn.com/w20/us.png" srcset="https://flagcdn.com/w40/us.png 2x" alt="Mỹ" class="flag-icon">',
+  'USA': '<img src="https://flagcdn.com/w20/us.png" srcset="https://flagcdn.com/w40/us.png 2x" alt="Mỹ" class="flag-icon">',
+  'Scotland': '<img src="https://flagcdn.com/w20/gb-sct.png" srcset="https://flagcdn.com/w40/gb-sct.png 2x" alt="Scotland" class="flag-icon">',
+  'Ireland': '<img src="https://flagcdn.com/w20/ie.png" srcset="https://flagcdn.com/w40/ie.png 2x" alt="Ireland" class="flag-icon">',
+  'Chile': '<img src="https://flagcdn.com/w20/cl.png" srcset="https://flagcdn.com/w40/cl.png 2x" alt="Chile" class="flag-icon">',
+  'New Zealand': '<img src="https://flagcdn.com/w20/nz.png" srcset="https://flagcdn.com/w40/nz.png 2x" alt="New Zealand" class="flag-icon">',
+  'Úc': '<img src="https://flagcdn.com/w20/au.png" srcset="https://flagcdn.com/w40/au.png 2x" alt="Úc" class="flag-icon">',
+  'Australia': '<img src="https://flagcdn.com/w20/au.png" srcset="https://flagcdn.com/w40/au.png 2x" alt="Úc" class="flag-icon">',
+  'Tây Ban Nha': '<img src="https://flagcdn.com/w20/es.png" srcset="https://flagcdn.com/w40/es.png 2x" alt="Tây Ban Nha" class="flag-icon">',
+  'Spain': '<img src="https://flagcdn.com/w20/es.png" srcset="https://flagcdn.com/w40/es.png 2x" alt="Tây Ban Nha" class="flag-icon">',
+  'Đức': '<img src="https://flagcdn.com/w20/de.png" srcset="https://flagcdn.com/w40/de.png 2x" alt="Đức" class="flag-icon">',
+  'Germany': '<img src="https://flagcdn.com/w20/de.png" srcset="https://flagcdn.com/w40/de.png 2x" alt="Đức" class="flag-icon">',
+  'Bồ Đào Nha': '<img src="https://flagcdn.com/w20/pt.png" srcset="https://flagcdn.com/w40/pt.png 2x" alt="Bồ Đào Nha" class="flag-icon">',
+  'Portugal': '<img src="https://flagcdn.com/w20/pt.png" srcset="https://flagcdn.com/w40/pt.png 2x" alt="Bồ Đào Nha" class="flag-icon">',
+  'Argentina': '<img src="https://flagcdn.com/w20/ar.png" srcset="https://flagcdn.com/w40/ar.png 2x" alt="Argentina" class="flag-icon">',
+  'Nam Phi': '<img src="https://flagcdn.com/w20/za.png" srcset="https://flagcdn.com/w40/za.png 2x" alt="Nam Phi" class="flag-icon">',
+  'Nhật Bản': '<img src="https://flagcdn.com/w20/jp.png" srcset="https://flagcdn.com/w40/jp.png 2x" alt="Nhật Bản" class="flag-icon">',
+  'Japan': '<img src="https://flagcdn.com/w20/jp.png" srcset="https://flagcdn.com/w40/jp.png 2x" alt="Nhật Bản" class="flag-icon">',
+};
+function getFlag(region) {
+  return FLAGS[region] ? FLAGS[region] + ' ' : '';
+}
+
 // ─── CURRENCY CONFIG ──────────────────────────────────────────
+
 const CURRENCIES = {
   VND: { symbol: '₫', rate: 1, format: v => `${(v).toLocaleString('vi-VN')}₫` },
   USD: { symbol: '$', rate: 0.000039, format: v => `$${(v * 0.000039).toFixed(2)}` },
@@ -535,7 +565,7 @@ function productCardHTML(p) {
       </div>
     </div>
     <div class="product-card__info">
-      <div class="product-card__region">${p.region} ${p.subregion ? `· ${p.subregion}` : ''}</div>
+      <div class="product-card__region">${getFlag(p.region)}${p.region} ${p.subregion ? `· ${p.subregion}` : ''}</div>
       <div class="product-card__name">${p.name}</div>
       <div class="product-card__vintage">${p.vintage ? `Vintage ${p.vintage}` : ''} ${p.grape ? `· ${p.grape}` : ''} · ${p.volume}</div>
       <div class="product-card__footer">
@@ -614,7 +644,7 @@ function renderProductDetail(id) {
         <span>›</span>
         <span>${p.name}</span>
       </div>
-      <div class="product-info__brand">${p.region} · ${p.subregion || ''}</div>
+      <div class="product-info__brand">${getFlag(p.region)}${p.region} · ${p.subregion || ''}</div>
       <h1 class="product-info__title">${p.name}</h1>
       <div class="product-info__rating">
         <div class="stars">${stars}</div>
@@ -782,7 +812,7 @@ function renderCart() {
       <img class="cart-item__img" src="${item.img}" alt="${item.name}" onerror="this.src='images/placeholder.jpg'">
       <div class="cart-item__info">
         <div class="cart-item__name">${item.name}</div>
-        <div class="cart-item__meta">${item.volume} · ${p?.region || ''}</div>
+        <div class="cart-item__meta">${item.volume} · ${getFlag(p?.region)}${p?.region || ''}</div>
         <div class="cart-item__actions">
           <button class="qty-btn" onclick="changeCartQty(${item.id},-1)">−</button>
           <span class="qty-value">${item.qty}</span>

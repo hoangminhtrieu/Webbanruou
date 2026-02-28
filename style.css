@@ -529,3 +529,5 @@ h4 { font-size: 1.125rem; }
   .product-info__meta { flex-wrap: wrap; gap: 1rem; }
   .input-row { grid-template-columns: 1fr; }
 }
+
+.flag-icon { width: 1.25em; height: auto; vertical-align: middle; display: inline-block; margin-top: -2px; border-radius: 2px; box-shadow: 0 0 0 1px rgba(255,255,255,0.1); }
