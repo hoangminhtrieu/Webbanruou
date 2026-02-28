@@ -135,8 +135,9 @@ window.doRegister = async function () {
     const nameInputs = form?.querySelectorAll('input:not([type])');
     const full_name = `${nameInputs?.[0]?.value || ''} ${nameInputs?.[1]?.value || ''}`.trim();
     const phoneEl = form?.querySelector('input[type=tel]');
+    const addressEl = document.getElementById('registerAddress');
     try {
-        const data = await API.auth.register({ email: emailEl?.value, password: passwordEl?.value, full_name, phone: phoneEl?.value });
+        const data = await API.auth.register({ email: emailEl?.value, password: passwordEl?.value, full_name, phone: phoneEl?.value, address: addressEl?.value });
         saveAuth(data.token, data.user);
         window.closeLoginModal();
         window.showToast('Tạo tài khoản thành công! Chào mừng 🎉', 'success');
@@ -145,6 +146,7 @@ window.doRegister = async function () {
         window.showToast(err.message, 'error');
     }
 };
+
 
 // Load products from API instead of static data
 async function loadProductsFromAPI(filters = {}) {
