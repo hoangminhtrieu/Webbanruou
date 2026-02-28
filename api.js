@@ -188,10 +188,16 @@ window.checkoutWithMoMo = async function (orderData) {
 function updateNavForAuth(user) {
     const loginBtn = document.querySelector('.navbar__actions .btn--outline');
     if (loginBtn && user) {
-        loginBtn.textContent = user.full_name.split(' ').pop();
+        // Hiện họ tên đầy đủ, tối đa 20 ký tự để vừa navbar
+        const name = user.full_name || '';
+        loginBtn.textContent = name.length > 20 ? name.substring(0, 18) + '…' : name;
         loginBtn.onclick = () => window.navigate && window.navigate('account');
+        loginBtn.style.maxWidth = '160px';
+        loginBtn.style.overflow = 'hidden';
+        loginBtn.style.textOverflow = 'ellipsis';
     }
 }
+
 
 // Listen for payment result postMessage
 window.addEventListener('message', (e) => {
