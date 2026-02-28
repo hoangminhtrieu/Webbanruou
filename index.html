@@ -1031,28 +1031,32 @@
               <div style="display:flex;flex-direction:column;gap:.75rem">
                 <div>
                   <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:.3rem">
-                    <span>Vang đỏ</span><span>42%</span></div>
+                    <span>Vang đỏ</span><span>42%</span>
+                  </div>
                   <div style="height:8px;background:var(--c-border);border-radius:4px">
                     <div style="height:100%;width:42%;background:var(--c-red-wine);border-radius:4px"></div>
                   </div>
                 </div>
                 <div>
                   <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:.3rem">
-                    <span>Champagne</span><span>28%</span></div>
+                    <span>Champagne</span><span>28%</span>
+                  </div>
                   <div style="height:8px;background:var(--c-border);border-radius:4px">
                     <div style="height:100%;width:28%;background:var(--c-gold);border-radius:4px"></div>
                   </div>
                 </div>
                 <div>
                   <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:.3rem">
-                    <span>Whisky</span><span>18%</span></div>
+                    <span>Whisky</span><span>18%</span>
+                  </div>
                   <div style="height:8px;background:var(--c-border);border-radius:4px">
                     <div style="height:100%;width:18%;background:#3b82f6;border-radius:4px"></div>
                   </div>
                 </div>
                 <div>
                   <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:.3rem">
-                    <span>Vang trắng</span><span>12%</span></div>
+                    <span>Vang trắng</span><span>12%</span>
+                  </div>
                   <div style="height:8px;background:var(--c-border);border-radius:4px">
                     <div style="height:100%;width:12%;background:var(--c-success);border-radius:4px"></div>
                   </div>
@@ -1402,8 +1406,66 @@
     window.showToast = showToast;
   </script>
 
-  <!-- ════════ FIREBASE ANALYTICS ════════ -->
-  <script type="module" src="firebase.js"></script>
+  <!-- ════════ FIREBASE ANALYTICS + FIRESTORE ════════ -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+    import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-analytics.js";
+    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyD4gGYW9w3qblgnD9doMEwWHwh_uDSePkU",
+      authDomain: "webbanruou-4291f.firebaseapp.com",
+      projectId: "webbanruou-4291f",
+      storageBucket: "webbanruou-4291f.firebasestorage.app",
+      messagingSenderId: "465267767114",
+      appId: "1:465267767114:web:4bb76680c458cbb909f3b3",
+      measurementId: "G-J8P2F6SFBQ"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const db = getFirestore(app);
+
+    // ── Analytics ──────────────────────────────────────────────
+    window.trackPageView = (pageName) => {
+      logEvent(analytics, 'page_view', { page_title: pageName });
+    };
+    window.trackProductView = (product) => {
+      logEvent(analytics, 'view_item', { item_id: String(product.id), item_name: product.name, item_category: product.type, value: product.price, currency: 'VND' });
+    };
+    window.trackAddToCart = (product, quantity = 1) => {
+      logEvent(analytics, 'add_to_cart', { item_id: String(product.id), item_name: product.name, quantity, value: product.price * quantity, currency: 'VND' });
+    };
+    window.trackPurchase = (orderId, total, items) => {
+      logEvent(analytics, 'purchase', { transaction_id: orderId, value: total, currency: 'VND', items });
+    };
+
+    // ── Firestore ──────────────────────────────────────────────
+    window.saveOrderToFirestore = async (orderData) => {
+      try {
+        const docRef = await addDoc(collection(db, 'orders'), {
+          ...orderData,
+          createdAt: serverTimestamp(),
+          status: 'pending'
+        });
+        console.log('✅ [Firestore] Đơn hàng đã lưu:', docRef.id);
+        return docRef.id;
+      } catch (error) {
+        console.error('❌ [Firestore] Lỗi:', error.message);
+      }
+    };
+    window.saveProductViewToFirestore = async (product) => {
+      try {
+        await addDoc(collection(db, 'product_views'), {
+          productId: product.id, productName: product.name,
+          productType: product.type, price: product.price,
+          viewedAt: serverTimestamp()
+        });
+      } catch (e) { /* silent */ }
+    };
+
+    console.log('🔥 Firebase Analytics + Firestore sẵn sàng!');
+  </script>
 </body>
 
 </html>
