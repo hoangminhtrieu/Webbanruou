@@ -1222,10 +1222,30 @@
           <p style="color:var(--c-muted)">Quản lý CRM khách hàng, phân nhóm và hành vi mua hàng.</p>
         </div>
         <div class="admin-section hidden" id="admin-promotions">
-          <div class="admin-header">
+          <div class="admin-header" style="display:flex; justify-content:space-between; align-items:center;">
             <h2 class="admin-header__title">🎁 Khuyến mãi</h2>
+            <button class="btn btn--primary btn--sm" onclick="openPromoModal()">+ Tạo mã mới</button>
           </div>
-          <p style="color:var(--c-muted)">Tạo và quản lý mã giảm giá, flash sale, và chương trình tích điểm.</p>
+          <div class="card" style="margin-top: 1.5rem;">
+            <div class="card__body">
+              <table style="width:100%; text-align:left; border-collapse: collapse;">
+                <thead>
+                  <tr style="border-bottom:1px solid var(--c-border); color:var(--c-muted); font-size:0.85rem;">
+                    <th style="padding:.75rem">Mã Code</th>
+                    <th style="padding:.75rem">Giảm giá (%)</th>
+                    <th style="padding:.75rem">Trạng thái</th>
+                    <th style="padding:.75rem">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="promoTableBody">
+                  <tr>
+                    <td colspan="4" style="padding:.75rem;text-align:center;color:var(--c-muted)">Chưa có mã khuyến mãi
+                      nào</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
         <div class="admin-section hidden" id="admin-settings">
           <div class="admin-header">
@@ -1309,6 +1329,26 @@
       </div>
     </div>
   </footer>
+  <!-- ════════ PROMO MODAL ════════ -->
+  <div class="modal-overlay" id="promoModal" role="dialog" aria-modal="true">
+    <div class="modal" style="max-width:400px">
+      <div class="modal__header">
+        <h3 class="serif" style="margin:0;font-size:1.5rem">Tạo mã khuyến mãi</h3>
+        <button class="modal__close" onclick="closePromoModal()" aria-label="Close">✕</button>
+      </div>
+      <div class="modal__body" style="display:flex;flex-direction:column;gap:1.5rem">
+        <div class="input-group">
+          <label>Mã Code (vd: SALE2025)</label>
+          <input class="input" id="newPromoCode" style="text-transform: uppercase;">
+        </div>
+        <div class="input-group">
+          <label>Mức giảm (%)</label>
+          <input type="number" class="input" id="newPromoDiscount" min="1" max="100" placeholder="10">
+        </div>
+        <button class="btn btn--primary" style="width:100%" onclick="createPromoCode()">Tạo mới</button>
+      </div>
+    </div>
+  </div>
 
   <!-- ════════ SCRIPTS ════════ -->
   <script src="api.js"></script>`n
@@ -1341,10 +1381,11 @@
         } catch (err) {
           // Fallback if the user hasn't created a real account on the backend yet
           console.warn('Backend login failed, using demo fallback:', err);
-          const mockUser = { id: 1, email, full_name: email.split('@')[0] || email, tier: 'gold', points: 4850 };
+          const isAdmin = email.toLowerCase() === 'admin';
+          const mockUser = { id: 1, email, full_name: isAdmin ? 'Admin VINOVA' : (email.split('@')[0] || email), tier: 'gold', points: 4850, role: isAdmin ? 'admin' : 'customer' };
           window.dispatchEvent(new CustomEvent('auth:login', { detail: mockUser }));
           closeLoginModal();
-          showToast('Đăng nhập (Demo) thành công! Chào mừng trở lại 🍷', 'success');
+          showToast(isAdmin ? 'Đăng nhập (Demo) Admin thành công!' : 'Đăng nhập (Demo) thành công! Chào mừng trở lại 🍷', 'success');
         }
       } else {
         // Fallback local login for demo
@@ -1357,7 +1398,16 @@
     };
 
     window.doRegister = () => { closeLoginModal(); showToast('Tạo tài khoản thành công!', 'success'); };
-    window.applyPromo = () => { const c = document.getElementById('promoCode').value; if (c.toUpperCase() === 'VINOVA10') showToast('Áp dụng mã giảm 10% thành công!', 'success'); else showToast('Mã không hợp lệ', 'error'); };
+    window.applyPromo = () => {
+      const c = document.getElementById('promoCode')?.value.trim().toUpperCase();
+      const statePromos = JSON.parse(localStorage.getItem('vinova_promos') || '[{"code":"VINOVA10","discount":10,"active":true}]');
+      const promo = statePromos.find(p => p.code === c && p.active);
+      if (promo) {
+        showToast(`Áp dụng mã giảm ${promo.discount}% thành công!`, 'success');
+      } else {
+        showToast('Mã không hợp lệ hoặc đã hết hạn', 'error');
+      }
+    };
     window.resetFilters = () => { state.filters = { types: [], regions: [], grapes: [], priceMin: 0, priceMax: 50000000, abvMin: 0, abvMax: 60, ratings: [] }; document.querySelectorAll('.filter-option input').forEach(cb => cb.checked = false); renderProductListing(); showToast('Đã xóa bộ lọc', 'info'); };
     window.filterByType = (type, btn) => {
       document.querySelectorAll('.section--sm .btn').forEach(b => { b.className = b === btn ? 'btn btn--primary' : 'btn btn--ghost'; });

@@ -9,6 +9,7 @@ const state = {
   lang: localStorage.getItem('vinova_lang') || 'vi',
   ageVerified: localStorage.getItem('vinova_age') === 'true',
   user: JSON.parse(localStorage.getItem('vinova_user') || 'null'),
+  promos: JSON.parse(localStorage.getItem('vinova_promos') || '[{"code":"VINOVA10","discount":10,"active":true}]'),
   filters: { types: [], regions: [], grapes: [], priceMin: 0, priceMax: 50000000, abvMin: 0, abvMax: 60, ratings: [] },
   page: 'home',
   checkoutStep: 1,
@@ -21,10 +22,11 @@ function initAuthUI() {
 
   // Show admin link if user role is admin
   if (adminLink) {
+    console.log('[Auth] Check admin role:', state.user?.role);
     if (state.user && state.user.role === 'admin') {
-      adminLink.style.display = 'block';
+      adminLink.setAttribute('style', 'display: block !important');
     } else {
-      adminLink.style.display = 'none';
+      adminLink.setAttribute('style', 'display: none !important');
       // If currently on admin page and not admin, redirect to home
       if (state.page === 'admin') navigate('home');
     }
@@ -1228,7 +1230,6 @@ function renderAccountInfo(user, container) {
   }
 }
 
-// ─── ADMIN ────────────────────────────────────────────────────
 function renderAdmin() {
   document.querySelectorAll('.admin-nav-item').forEach(item => {
     item.addEventListener('click', () => {
@@ -1236,10 +1237,72 @@ function renderAdmin() {
       item.classList.add('active');
       const section = item.dataset.section;
       document.querySelectorAll('.admin-section').forEach(s => s.classList.toggle('hidden', s.id !== `admin-${section}`));
+      if (section === 'promotions') renderPromosAdmin();
     });
   });
   renderCharts();
+  renderPromosAdmin();
 }
+
+function renderPromosAdmin() {
+  const tbody = document.getElementById('promoTableBody');
+  if (!tbody) return;
+  if (!state.promos || !state.promos.length) {
+    tbody.innerHTML = '<tr><td colspan="4" style="padding:.75rem;text-align:center;color:var(--c-muted)">Chưa có mã khuyến mãi nào</td></tr>';
+    return;
+  }
+  tbody.innerHTML = state.promos.map((p, idx) => `
+    <tr style="border-bottom:1px solid var(--c-border)">
+      <td style="padding:.75rem;font-weight:600">${p.code}</td>
+      <td style="padding:.75rem;color:var(--c-gold)">${p.discount}%</td>
+      <td style="padding:.75rem">
+        <span style="padding:.2rem .5rem; border-radius:99px; background:${p.active ? 'rgba(39,174,96,0.1)' : 'rgba(231,76,60,0.1)'}; color:${p.active ? '#27ae60' : '#e74c3c'}; font-size:.75rem;">
+          ${p.active ? 'Hoạt động' : 'Tạm dừng'}
+        </span>
+      </td>
+      <td style="padding:.75rem">
+        <button class="btn btn--outline btn--sm" style="padding:.2rem .5rem" onclick="togglePromo(${idx})">${p.active ? 'Dừng' : 'Bật'}</button>
+        <button class="btn btn--ghost btn--sm" style="padding:.2rem .5rem;color:var(--c-error)" onclick="deletePromo(${idx})">Xóa</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+window.openPromoModal = () => document.getElementById('promoModal')?.classList.add('open');
+window.closePromoModal = () => document.getElementById('promoModal')?.classList.remove('open');
+
+window.createPromoCode = () => {
+  const codeInput = document.getElementById('newPromoCode');
+  const discountInput = document.getElementById('newPromoDiscount');
+  const code = codeInput?.value.trim().toUpperCase();
+  const discount = parseInt(discountInput?.value || 0);
+
+  if (!code) return window.showToast('Vui lòng nhập mã code', 'error');
+  if (!discount || discount < 1 || discount > 100) return window.showToast('Mức giảm giá không hợp lệ', 'error');
+  if (state.promos.find(p => p.code === code)) return window.showToast('Mã code này đã tồn tại', 'error');
+
+  state.promos.push({ code, discount, active: true });
+  localStorage.setItem('vinova_promos', JSON.stringify(state.promos));
+  renderPromosAdmin();
+  window.closePromoModal();
+  codeInput.value = ''; discountInput.value = '';
+  window.showToast('Đã tạo mã khuyến mãi mới!', 'success');
+};
+
+window.togglePromo = (idx) => {
+  state.promos[idx].active = !state.promos[idx].active;
+  localStorage.setItem('vinova_promos', JSON.stringify(state.promos));
+  renderPromosAdmin();
+  window.showToast('Đã cập nhật trạng thái mã', 'success');
+};
+
+window.deletePromo = (idx) => {
+  if (!confirm('Bạn có chắc chắn muốn xóa mã này?')) return;
+  state.promos.splice(idx, 1);
+  localStorage.setItem('vinova_promos', JSON.stringify(state.promos));
+  renderPromosAdmin();
+  window.showToast('Đã xóa mã khuyến mãi', 'success');
+};
 
 function renderCharts() {
   const months = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
