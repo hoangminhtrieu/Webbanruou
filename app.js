@@ -2,7 +2,6 @@
    VINOVA — Main Application JavaScript
    ============================================================ */
 
-// ─── STATE ────────────────────────────────────────────────────
 const state = {
   cart: JSON.parse(localStorage.getItem('vinova_cart') || '[]'),
   wishlist: JSON.parse(localStorage.getItem('vinova_wishlist') || '[]'),
@@ -14,6 +13,37 @@ const state = {
   page: 'home',
   checkoutStep: 1,
 };
+
+// ─── INIT AUTH ────────────────────────────────────────────────
+function initAuthUI() {
+  const btn = document.getElementById('headerAuthBtn');
+  if (!btn) return;
+  if (state.user) {
+    btn.textContent = state.user.full_name || 'Tài khoản';
+    btn.classList.replace('btn--outline', 'btn--ghost');
+    btn.onclick = () => navigate('account');
+  } else {
+    btn.textContent = 'Đăng nhập';
+    btn.classList.replace('btn--ghost', 'btn--outline');
+    btn.onclick = window.openLoginModal || (() => { });
+  }
+}
+
+window.addEventListener('auth:login', (e) => {
+  state.user = e.detail;
+  localStorage.setItem('vinova_user', JSON.stringify(state.user));
+  initAuthUI();
+  if (state.page === 'account') renderAccount();
+});
+
+window.addEventListener('auth:logout', () => {
+  state.user = null;
+  localStorage.removeItem('vinova_user');
+  localStorage.removeItem('vinova_token');
+  initAuthUI();
+  if (state.page === 'account') renderAccount();
+  showToast('Đã đăng xuất thành công', 'info');
+});
 
 // ─── PRODUCTS DATABASE ────────────────────────────────────────
 const PRODUCTS = [
@@ -1273,6 +1303,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initNav();
   initFilters();
   initSearch();
+  initAuthUI();
   updateCartBadge();
   // Render featured products on homepage
   const featuredContainer = document.getElementById('featuredProducts');
@@ -1290,5 +1321,28 @@ document.addEventListener('DOMContentLoaded', () => {
   const hash = window.location.hash.replace('#', '') || 'home';
   navigate(['home', 'products', 'cart', 'checkout', 'account', 'wine-club', 'admin', 'product-detail'].includes(hash) ? hash : 'home');
   console.log('%cVINOVA Premium Wine & Spirits', 'color:#c9a84c;font-size:1.2rem;font-weight:bold');
+
+  // Custom Login Flow bindings for Vinova API
+  document.getElementById('loginBtn')?.addEventListener('click', async () => {
+    const email = document.getElementById('loginEmail')?.value;
+    const pass = document.getElementById('loginPass')?.value;
+    if (!email || !pass) return showToast('Vui lòng nhập email và mật khẩu', 'error');
+    if (typeof window.VINOVA_API !== 'undefined') {
+      try {
+        const res = await window.VINOVA_API.users.login(email, pass);
+        window.dispatchEvent(new CustomEvent('auth:login', { detail: res.user }));
+        window.closeLoginModal?.();
+        showToast('Đăng nhập thành công!', 'success');
+      } catch (err) {
+        showToast(err.message || 'Lỗi đăng nhập', 'error');
+      }
+    } else {
+      // Fallback local login
+      const mockUser = { id: 1, email, full_name: email.split('@')[0], tier: 'gold', points: 4850 };
+      window.dispatchEvent(new CustomEvent('auth:login', { detail: mockUser }));
+      window.closeLoginModal?.();
+      showToast('Đăng nhập (Demo) thành công!', 'success');
+    }
+  });
 });
 
