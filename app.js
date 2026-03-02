@@ -17,6 +17,19 @@ const state = {
 // ─── INIT AUTH ────────────────────────────────────────────────
 function initAuthUI() {
   const btn = document.getElementById('headerAuthBtn');
+  const adminLink = document.getElementById('navAdminLink');
+
+  // Show admin link if user role is admin
+  if (adminLink) {
+    if (state.user && state.user.role === 'admin') {
+      adminLink.style.display = 'block';
+    } else {
+      adminLink.style.display = 'none';
+      // If currently on admin page and not admin, redirect to home
+      if (state.page === 'admin') navigate('home');
+    }
+  }
+
   if (!btn) return;
   if (state.user) {
     btn.textContent = state.user.full_name || 'Tài khoản';
@@ -1338,10 +1351,11 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } else {
       // Fallback local login
-      const mockUser = { id: 1, email, full_name: email.split('@')[0], tier: 'gold', points: 4850 };
+      const isAdmin = email.toLowerCase() === 'admin';
+      const mockUser = { id: 1, email, full_name: isAdmin ? 'Admin VINOVA' : email.split('@')[0], tier: 'gold', points: 4850, role: isAdmin ? 'admin' : 'customer' };
       window.dispatchEvent(new CustomEvent('auth:login', { detail: mockUser }));
       window.closeLoginModal?.();
-      showToast('Đăng nhập (Demo) thành công!', 'success');
+      showToast(isAdmin ? 'Đăng nhập (Demo) Admin thành công!' : 'Đăng nhập (Demo) thành công!', 'success');
     }
   });
 });

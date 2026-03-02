@@ -64,7 +64,7 @@
         <a class="navbar__link" data-page="products" href="#products">Sản phẩm</a>
         <a class="navbar__link" data-page="wine-club" href="#wine-club">Wine Club</a>
         <a class="navbar__link" data-page="account" href="#account">Tài khoản</a>
-        <a class="navbar__link" data-page="admin" href="#admin">Quản trị</a>
+        <a class="navbar__link" data-page="admin" href="#admin" id="navAdminLink" style="display:none">Quản trị</a>
       </div>
       <div class="navbar__actions">
         <!-- Search -->
@@ -1348,10 +1348,11 @@
         }
       } else {
         // Fallback local login for demo
-        const mockUser = { id: 1, email, full_name: email.split('@')[0] || email, tier: 'gold', points: 4850 };
+        const isAdmin = email.toLowerCase() === 'admin';
+        const mockUser = { id: 1, email, full_name: isAdmin ? 'Admin VINOVA' : (email.split('@')[0] || email), tier: 'gold', points: 4850, role: isAdmin ? 'admin' : 'customer' };
         window.dispatchEvent(new CustomEvent('auth:login', { detail: mockUser }));
         closeLoginModal();
-        showToast('Đăng nhập (Demo) thành công! Chào mừng trở lại 🍷', 'success');
+        showToast(isAdmin ? 'Đăng nhập (Demo) Admin thành công!' : 'Đăng nhập (Demo) thành công! Chào mừng trở lại 🍷', 'success');
       }
     };
 
