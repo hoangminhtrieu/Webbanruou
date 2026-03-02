@@ -4,9 +4,10 @@
 const router = require('express').Router();
 const { getDB } = require('../config/database');
 const { authMiddleware, adminMiddleware } = require('../middleware/auth');
+const { validateProductFilter, validateProductCreate, validateId, validateReview } = require('../middleware/validate');
 
 // GET /api/products
-router.get('/', (req, res) => {
+router.get('/', validateProductFilter, (req, res) => {
     const db = getDB();
     let sql = 'SELECT * FROM products WHERE is_active = 1';
     const params = [];
@@ -103,6 +104,7 @@ router.put('/:id', authMiddleware, adminMiddleware, (req, res) => {
     res.json({ message: 'Cập nhật thành công' });
 });
 
+
 // DELETE /api/products/:id — Admin soft delete
 router.delete('/:id', authMiddleware, adminMiddleware, (req, res) => {
     const db = getDB();
@@ -110,4 +112,40 @@ router.delete('/:id', authMiddleware, adminMiddleware, (req, res) => {
     res.json({ message: 'Đã ẩn sản phẩm' });
 });
 
+// POST /api/products/:id/reviews — Add review (yêu cầu đăng nhập)
+router.post('/:id/reviews', authMiddleware, validateReview, (req, res) => {
+    const db = getDB();
+    const productId = +req.params.id;
+    const { rating, comment } = req.body;
+    const product = db.prepare('SELECT id FROM products WHERE id = ? AND is_active = 1').get(productId);
+    if (!product) return res.status(404).json({ error: 'Sản phẩm không tồn tại' });
+    try {
+        db.prepare('INSERT OR REPLACE INTO reviews (product_id, user_id, rating, comment) VALUES (?, ?, ?, ?)').run(productId, req.user.id, rating, comment || null);
+        const avg = db.prepare('SELECT AVG(rating) as avg, COUNT(*) as cnt FROM reviews WHERE product_id = ?').get(productId);
+        db.prepare('UPDATE products SET rating = ?, reviews_count = ? WHERE id = ?').run(
+            Math.round(avg.avg * 10) / 10, avg.cnt, productId
+        );
+        res.status(201).json({ message: 'Đánh giá của bạn đã được ghi nhận!' });
+    } catch {
+        res.status(409).json({ error: 'Bạn đã đánh giá sản phẩm này rồi' });
+    }
+});
+
+// GET /api/products/:id/reviews
+router.get('/:id/reviews', (req, res) => {
+    const db = getDB();
+    const page = Math.max(1, +req.query.page || 1);
+    const limit = 10;
+    const offset = (page - 1) * limit;
+    const reviews = db.prepare(`
+        SELECT r.id, r.rating, r.comment, r.created_at, u.full_name, u.tier
+        FROM reviews r JOIN users u ON r.user_id = u.id
+        WHERE r.product_id = ?
+        ORDER BY r.created_at DESC LIMIT ? OFFSET ?
+    `).all(req.params.id, limit, offset);
+    const total = db.prepare('SELECT COUNT(*) as cnt FROM reviews WHERE product_id = ?').get(req.params.id)?.cnt || 0;
+    res.json({ reviews, total, page, pages: Math.ceil(total / limit) });
+});
+
 module.exports = router;
+

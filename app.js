@@ -533,21 +533,41 @@ function updatePrices() {
 function renderProductListing() {
   const container = document.getElementById('productGrid');
   if (!container) return;
-  let products = [...PRODUCTS];
-  // Apply filters
-  if (state.filters.types.length) products = products.filter(p => state.filters.types.includes(p.type));
-  if (state.filters.regions.length) products = products.filter(p => state.filters.regions.includes(p.region));
-  // Apply sort
-  const sort = document.getElementById('sortSelect')?.value || 'popular';
-  if (sort === 'price-asc') products.sort((a, b) => a.price - b.price);
-  else if (sort === 'price-desc') products.sort((a, b) => b.price - a.price);
-  else if (sort === 'rating') products.sort((a, b) => b.rating - a.rating);
-  else if (sort === 'newest') products.sort((a, b) => (b.vintage || 0) - (a.vintage || 0));
+  container.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--c-muted)">⏳ Đang tải sản phẩm...</div>';
 
-  document.getElementById('listingCount').textContent = `${products.length} sản phẩm`;
-  container.innerHTML = products.map(p => productCardHTML(p)).join('');
-  attachProductCardEvents();
+  const sort = document.getElementById('sortSelect')?.value || 'popular';
+  const params = { sort: sort.replace('-', '_'), limit: 50 };
+  if (state.filters.types?.length) params.type = state.filters.types[0];
+  if (state.filters.regions?.length) params.region = state.filters.regions[0];
+
+  const apiCall = (typeof window.VINOVA_API !== 'undefined')
+    ? window.VINOVA_API.products.list(params).then(d => d.products)
+    : Promise.reject();
+
+  apiCall.catch(() => {
+    let products = [...PRODUCTS];
+    if (state.filters.types?.length) products = products.filter(p => state.filters.types.includes(p.type));
+    if (state.filters.regions?.length) products = products.filter(p => state.filters.regions.includes(p.region));
+    if (sort === 'price-asc') products.sort((a, b) => a.price - b.price);
+    else if (sort === 'price-desc') products.sort((a, b) => b.price - a.price);
+    else if (sort === 'rating') products.sort((a, b) => b.rating - a.rating);
+    else if (sort === 'newest') products.sort((a, b) => (b.vintage || 0) - (a.vintage || 0));
+    return products;
+  }).then(products => {
+    products = products.map(p => ({
+      ...p,
+      oldPrice: p.oldPrice !== undefined ? p.oldPrice : p.old_price,
+      reviews: p.reviews !== undefined ? p.reviews : p.reviews_count,
+      tasting: p.tasting || { color: '', nose: '', palate: '', finish: '' },
+      food: Array.isArray(p.food_pairing) ? p.food_pairing : (p.food || []),
+    }));
+    const el = document.getElementById('listingCount');
+    if (el) el.textContent = `${products.length} sản phẩm`;
+    container.innerHTML = products.map(p => productCardHTML(p)).join('');
+    attachProductCardEvents();
+  });
 }
+
 
 function productCardHTML(p) {
   const isWishlisted = state.wishlist.includes(p.id);
@@ -560,7 +580,7 @@ function productCardHTML(p) {
         ${isWishlisted ? '♥' : '♡'}
       </button>
       <div class="product-card__actions">
-        <button class="btn btn--primary btn--sm" style="flex:1" data-add="${p.id}">🛒 Thêm vào giỏ</button>
+        <button class="btn btn--primary btn--sm" data-add="${p.id}">🛒 Thêm vào giỏ</button>
         <button class="btn btn--outline btn--sm" data-detail="${p.id}">Chi tiết</button>
       </div>
     </div>
@@ -611,17 +631,28 @@ function attachProductCardEvents() {
 
 // ─── PRODUCT DETAIL ───────────────────────────────────────────
 function renderProductDetail(id) {
-  const p = PRODUCTS.find(x => x.id === id);
-  if (!p) return;
   const container = document.getElementById('productDetailContent');
   if (!container) return;
-  // Firebase: track product view
-  if (typeof window.trackProductView === 'function') window.trackProductView(p);
-  if (typeof window.saveProductViewToFirestore === 'function') window.saveProductViewToFirestore(p);
+  container.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--c-muted)">⏳ Đang tải...</div>';
+  // Thử API trước, fallback PRODUCTS tĩnh
+  const apiPromise = (typeof window.VINOVA_API !== 'undefined')
+    ? window.VINOVA_API.products.get(id).then(d => ({ ...d.product, reviews_list: d.reviews }))
+    : Promise.reject();
+  apiPromise.catch(() => PRODUCTS.find(x => x.id === id)).then(p => {
+    if (!p) { container.innerHTML = '<div style="padding:2rem">Không tìm thấy sản phẩm</div>'; return; }
+    // Normalize
+    p = {
+      ...p, oldPrice: p.oldPrice ?? p.old_price, reviews: p.reviews ?? p.reviews_count,
+      tasting: p.tasting || { color: p.tasting_notes?.[0] || '', nose: p.tasting_notes?.[1] || '', palate: p.tasting_notes?.[2] || '', finish: '' },
+      food: Array.isArray(p.food_pairing) ? p.food_pairing : (p.food || [])
+    };
+    if (typeof window.trackProductView === 'function') window.trackProductView(p);
+    if (typeof window.saveProductViewToFirestore === 'function') window.saveProductViewToFirestore(p);
 
-  const stars = '★'.repeat(Math.floor(p.rating)) + (p.rating % 1 >= 0.5 ? '½' : '') + '☆'.repeat(5 - Math.ceil(p.rating));
 
-  container.innerHTML = `
+    const stars = '★'.repeat(Math.floor(p.rating)) + (p.rating % 1 >= 0.5 ? '½' : '') + '☆'.repeat(5 - Math.ceil(p.rating));
+
+    container.innerHTML = `
   <div class="product-detail animate-up">
     <!-- Gallery -->
     <div class="product-gallery">
@@ -728,24 +759,25 @@ function renderProductDetail(id) {
     </div>
   </div>`;
 
-  // Qty controls
-  let qty = 1;
-  document.getElementById('qtyMinus')?.addEventListener('click', () => { if (qty > 1) { qty--; document.getElementById('qtyVal').textContent = qty; } });
-  document.getElementById('qtyPlus')?.addEventListener('click', () => { if (qty < p.stock) { qty++; document.getElementById('qtyVal').textContent = qty; } });
+    // Qty controls
+    let qty = 1;
+    document.getElementById('qtyMinus')?.addEventListener('click', () => { if (qty > 1) { qty--; document.getElementById('qtyVal').textContent = qty; } });
+    document.getElementById('qtyPlus')?.addEventListener('click', () => { if (qty < p.stock) { qty++; document.getElementById('qtyVal').textContent = qty; } });
 
-  // Tabs
-  container.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      container.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      container.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      btn.classList.add('active');
-      document.getElementById(`tab-${btn.dataset.tab}`)?.classList.add('active');
+    // Tabs
+    container.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        container.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        container.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(`tab-${btn.dataset.tab}`)?.classList.add('active');
+      });
     });
-  });
-  // Variant buttons
-  container.querySelectorAll('.variant-btn').forEach(btn => {
-    btn.addEventListener('click', () => { container.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); });
-  });
+    // Variant buttons
+    container.querySelectorAll('.variant-btn').forEach(btn => {
+      btn.addEventListener('click', () => { container.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); });
+    });
+  }); // đóng apiPromise.catch(...).then(p => { ... })
 }
 
 window.switchThumb = (el, src) => {
@@ -754,22 +786,51 @@ window.switchThumb = (el, src) => {
   const main = document.getElementById('galleryMain');
   if (main) main.src = src;
 };
-window.toggleWishlist = (id, btn) => {
+window.toggleWishlist = async (id, btn) => {
+  const token = localStorage.getItem('vinova_token');
+  const hasApi = token && typeof window.VINOVA_API !== 'undefined';
+
   if (state.wishlist.includes(id)) {
+    if (hasApi) {
+      try {
+        await window.VINOVA_API.users.removeWishlist(id);
+        state.wishlist.splice(state.wishlist.indexOf(id), 1);
+        btn.textContent = '♡ Yêu thích'; showToast('Đã xóa khỏi yêu thích', 'info');
+      } catch (err) { showToast(err.message, 'error'); }
+      return;
+    }
     state.wishlist.splice(state.wishlist.indexOf(id), 1);
     btn.textContent = '♡ Yêu thích'; showToast('Đã xóa khỏi yêu thích', 'info');
   } else {
+    if (hasApi) {
+      try {
+        await window.VINOVA_API.users.addWishlist(id);
+        state.wishlist.push(id); btn.textContent = '♥ Đã yêu thích'; showToast('Đã thêm vào yêu thích 💛', 'success');
+      } catch (err) { showToast(err.message, 'error'); }
+      return;
+    }
     state.wishlist.push(id); btn.textContent = '♥ Đã yêu thích'; showToast('Đã thêm vào yêu thích 💛', 'success');
   }
   saveState();
 };
 
 function generateReviewsHTML(p) {
-  const reviews = [
-    { name: 'Nguyễn Văn A', rating: 5, comment: 'Rượu tuyệt vời, hương vị phức hợp và dư vị rất dài. Sẽ mua lại!', date: '15/01/2025' },
-    { name: 'Trần Thị B', rating: 5, comment: 'Đóng gói cẩn thận, giao hàng đúng nhiệt độ. Món quà hoàn hảo cho sếp!', date: '12/01/2025' },
-    { name: 'Lê Minh C', rating: 4, comment: 'Chất lượng xứng đáng với giá tiền. Khá cao cấp.', date: '08/01/2025' },
-  ];
+  let reviews = [];
+  if (p.reviews_list && p.reviews_list.length > 0) {
+    reviews = p.reviews_list.map(r => ({
+      name: r.full_name || 'Khách hàng',
+      rating: r.rating,
+      comment: r.comment || '',
+      date: new Date(r.created_at).toLocaleDateString('vi-VN')
+    }));
+  } else {
+    // Static fallback
+    reviews = [
+      { name: 'Nguyễn Văn A', rating: 5, comment: 'Rượu tuyệt vời, hương vị phức hợp và dư vị rất dài. Sẽ mua lại!', date: '15/01/2025' },
+      { name: 'Trần Thị B', rating: 5, comment: 'Đóng gói cẩn thận, giao hàng đúng nhiệt độ. Món quà hoàn hảo cho sếp!', date: '12/01/2025' },
+      { name: 'Lê Minh C', rating: 4, comment: 'Chất lượng xứng đáng với giá tiền. Khá cao cấp.', date: '08/01/2025' },
+    ];
+  }
   return `<div style="display:flex;flex-direction:column;gap:1.25rem">
     ${reviews.map(r => `<div style="padding:1rem;background:var(--c-surface2);border-radius:var(--radius-sm)">
       <div style="display:flex;justify-content:space-between;margin-bottom:.4rem">
@@ -783,17 +844,29 @@ function generateReviewsHTML(p) {
 
 // ─── CART ─────────────────────────────────────────────────────
 function addToCart(id, qty = 1) {
-  const p = PRODUCTS.find(x => x.id === id);
-  if (!p) return;
+  const p = PRODUCTS.find(x => x.id === id) || { id, name: 'Sản phẩm', stock: 99, price: 0, img: '', volume: '750ml' };
+  const token = localStorage.getItem('vinova_token');
+  if (token && typeof window.VINOVA_API !== 'undefined') {
+    window.VINOVA_API.cart.add(id, qty)
+      .then(() => {
+        showToast(`Đã thêm vào giỏ hàng! 🛒`, 'success');
+        updateCartBadge();
+        if (state.page === 'cart') renderCart();
+        if (typeof window.trackAddToCart === 'function') window.trackAddToCart(p, qty);
+      })
+      .catch(err => showToast(err.message || 'Không thể thêm vào giỏ hàng', 'error'));
+    return;
+  }
+  // Guest fallback → localStorage
   const existing = state.cart.find(i => i.id === id);
   if (existing) existing.qty = Math.min(existing.qty + qty, p.stock);
-  else state.cart.push({ id, qty, name: p.name, price: p.price, img: p.img, volume: p.volume });
+  else state.cart.push({ id, productId: id, qty, name: p.name, price: p.price, img: p.img, volume: p.volume });
   saveState(); updateCartBadge();
   showToast(`Đã thêm ${p.name} vào giỏ hàng`, 'success');
-  // Firebase Analytics: track add to cart
   if (typeof window.trackAddToCart === 'function') window.trackAddToCart(p, qty);
   if (state.page === 'cart') renderCart();
 }
+
 
 function renderCart() {
   const container = document.getElementById('cartItems');
@@ -826,13 +899,42 @@ function renderCart() {
   updateOrderSummary();
 }
 
-window.changeCartQty = (id, delta) => {
+window.changeCartQty = async (id, delta) => {
   const item = state.cart.find(i => i.id === id);
   if (!item) return;
-  item.qty = Math.max(1, item.qty + delta);
+  const newQty = Math.max(1, item.qty + delta);
+
+  const token = localStorage.getItem('vinova_token');
+  if (token && typeof window.VINOVA_API !== 'undefined') {
+    try {
+      await window.VINOVA_API.cart.update(id, newQty);
+      item.qty = newQty;
+      renderCart();
+      updateCartBadge();
+    } catch (err) {
+      showToast(err.message || 'Không thể cập nhật số lượng', 'error');
+    }
+    return;
+  }
+
+  item.qty = newQty;
   saveState(); renderCart();
 };
-window.removeFromCart = (id) => {
+window.removeFromCart = async (id) => {
+  const token = localStorage.getItem('vinova_token');
+  if (token && typeof window.VINOVA_API !== 'undefined') {
+    try {
+      await window.VINOVA_API.cart.remove(id);
+      state.cart = state.cart.filter(i => i.id !== id);
+      renderCart();
+      updateCartBadge();
+      showToast('Đã xóa sản phẩm khỏi giỏ hàng', 'info');
+    } catch (err) {
+      showToast(err.message || 'Không thể xóa sản phẩm', 'error');
+    }
+    return;
+  }
+
   state.cart = state.cart.filter(i => i.id !== id);
   saveState(); updateCartBadge(); renderCart();
   showToast('Đã xóa sản phẩm khỏi giỏ hàng', 'info');
@@ -875,32 +977,136 @@ window.nextCheckoutStep = () => {
   if (state.checkoutStep === 4) { completeOrder(); }
 };
 window.prevCheckoutStep = () => { if (state.checkoutStep > 1) goToCheckoutStep(state.checkoutStep - 1); };
-function completeOrder() {
-  const orderId = `VNV-${Date.now()}`;
+
+async function completeOrder() {
   const total = cartTotal();
-  const items = state.cart.map(i => ({ id: i.id, name: i.name, qty: i.qty, price: i.price }));
+  const token = localStorage.getItem('vinova_token');
 
-  // Firebase Analytics: track purchase
-  if (typeof window.trackPurchase === 'function') window.trackPurchase(orderId, total, items);
-
-  // Firebase Firestore: save order
-  if (typeof window.saveOrderToFirestore === 'function') {
-    window.saveOrderToFirestore({
-      orderId,
-      total,
-      items,
-      currency: state.currency,
-      user: state.user ? state.user.email : 'guest',
-    });
+  if (token && typeof window.VINOVA_API !== 'undefined' && state.cart.length > 0) {
+    const items = state.cart.map(i => ({
+      productId: i.id || i.product_id || i.productId,
+      name: i.name, qty: i.qty, price: i.price, img: i.img, volume: i.volume || '750ml'
+    }));
+    const address = {
+      name: document.getElementById('checkoutName')?.value || state.user?.full_name || 'Khách hàng',
+      phone: document.getElementById('checkoutPhone')?.value || '0900000000',
+      street: document.getElementById('checkoutAddress')?.value || '123 Đường ABC',
+      district: document.getElementById('checkoutDistrict')?.value || 'Quận 1',
+      city: document.getElementById('checkoutCity')?.value || 'TP. Hồ Chí Minh',
+    };
+    const paymentMethod = document.querySelector('input[name="payment"]:checked')?.value || 'cod';
+    const shippingMethod = document.querySelector('input[name="shipping"]:checked')?.value || 'standard';
+    const giftWrap = document.getElementById('giftWrap')?.checked || false;
+    try {
+      showToast('Đang tạo đơn hàng...', 'info');
+      const orderRes = await window.VINOVA_API.orders.create({
+        items, address, paymentMethod, shippingMethod, giftWrap,
+        total, shippingFee: total > 5000000 ? 0 : 50000, tax: Math.round(total * 0.1),
+      });
+      const orderId = orderRes.order_id;
+      if (typeof window.trackPurchase === 'function') window.trackPurchase(orderId, total, items);
+      if (paymentMethod === 'vnpay') {
+        const r = await window.VINOVA_API.payments.vnpay(orderId);
+        if (r.payment_url) { window.location.href = r.payment_url; return; }
+      } else if (paymentMethod === 'momo') {
+        const r = await window.VINOVA_API.payments.momo(orderId);
+        if (r.payment_url) { window.location.href = r.payment_url; return; }
+      }
+      state.cart = []; saveState(); updateCartBadge();
+      goToCheckoutStep(4);
+      const el = document.getElementById('orderConfirmId');
+      if (el) el.textContent = `#${orderId}`;
+      showToast('🎉 Đơn hàng đã đặt thành công!', 'success', 5000);
+      return;
+    } catch (err) {
+      showToast(err.message || 'Lỗi đặt hàng, vui lòng thử lại', 'error');
+      return;
+    }
   }
 
+  // Guest fallback
+  const orderId = `VNV-${Date.now()}`;
+  const items = state.cart.map(i => ({ id: i.id, name: i.name, qty: i.qty, price: i.price }));
+  if (typeof window.trackPurchase === 'function') window.trackPurchase(orderId, total, items);
+  if (typeof window.saveOrderToFirestore === 'function') window.saveOrderToFirestore({ orderId, total, items, currency: state.currency, user: 'guest' });
   state.cart = []; saveState(); updateCartBadge();
   goToCheckoutStep(4);
   showToast('🎉 Đơn hàng đã được đặt thành công!', 'success', 5000);
 }
 
+
 // ─── ACCOUNT ──────────────────────────────────────────────────
-function renderAccount() { /* renders static demo content */ }
+function renderAccount() {
+  const user = state.user || JSON.parse(localStorage.getItem('vinova_user') || 'null');
+  const container = document.getElementById('accountContent');
+  if (!container) return;
+  if (!user) {
+    container.innerHTML = `<div style="text-align:center;padding:3rem">
+      <div style="font-size:3rem;margin-bottom:1rem">🍷</div>
+      <h3>Vui lòng đăng nhập để xem tài khoản</h3>
+      <button class="btn btn--primary" style="margin-top:1rem" onclick="document.querySelector('.btn--outline').click()">Đăng nhập</button>
+    </div>`;
+    return;
+  }
+
+  if (typeof window.VINOVA_API !== 'undefined') {
+    window.VINOVA_API.users.profile().then(data => {
+      if (data.user) {
+        Object.assign(user, data.user);
+        state.user = user;
+        localStorage.setItem('vinova_user', JSON.stringify(user));
+        renderAccountInfo(user, container);
+      }
+    }).catch(() => renderAccountInfo(user, container));
+  } else {
+    renderAccountInfo(user, container);
+  }
+}
+
+function renderAccountInfo(user, container) {
+  const tierColor = { silver: '#aaa', gold: '#c9a84c', platinum: '#5ce8e8' }[user.tier] || '#aaa';
+  container.innerHTML = `
+    <div class="animate-up" style="display:flex;flex-direction:column;gap:1.5rem">
+      <div style="padding:1.5rem;background:var(--c-surface1);border-radius:var(--radius);border:1px solid var(--c-border)">
+        <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap">
+          <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--c-red-wine),var(--c-gold));display:flex;align-items:center;justify-content:center;font-size:1.8rem;color:#fff;font-weight:700">
+            ${(user.full_name || '?')[0].toUpperCase()}
+          </div>
+          <div>
+            <div style="font-size:1.2rem;font-weight:600">${user.full_name || 'Khách hàng'}</div>
+            <div style="color:var(--c-muted);font-size:.85rem">${user.email || ''}</div>
+            <div style="margin-top:.4rem"><span style="color:${tierColor};font-weight:600;text-transform:uppercase;font-size:.8rem">★ ${user.tier || 'Silver'} Member</span></div>
+          </div>
+          <div style="margin-left:auto;text-align:right">
+            <div style="font-size:1.5rem;font-weight:700;color:var(--c-gold)">${(user.points || 0).toLocaleString()}</div>
+            <div style="font-size:.75rem;color:var(--c-muted)">điểm tích lũy</div>
+          </div>
+        </div>
+      </div>
+      <div id="orderHistorySection"><div style="text-align:center;padding:2rem;color:var(--c-muted)">⏳ Đang tải lịch sử đơn hàng...</div></div>
+    </div>`;
+
+  if (typeof window.VINOVA_API !== 'undefined') {
+    window.VINOVA_API.orders.list().then(data => {
+      const orders = data.orders || [];
+      const el = document.getElementById('orderHistorySection');
+      if (!el) return;
+      if (!orders.length) { el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--c-muted)">Chưa có đơn hàng nào</div>'; return; }
+      const sLabel = { pending: 'Chờ xác nhận', confirmed: 'Đã xác nhận', shipping: 'Đang giao', completed: 'Hoàn thành', cancelled: 'Đã hủy' };
+      const sColor = { pending: '#f39c12', confirmed: '#3498db', shipping: '#9b59b6', completed: '#27ae60', cancelled: '#e74c3c' };
+      el.innerHTML = `<h4 style="margin-bottom:1rem">Lịch sử đơn hàng (${orders.length})</h4>` +
+        orders.map(o => `<div style="padding:1rem;background:var(--c-surface1);border-radius:var(--radius-sm);border:1px solid var(--c-border);margin-bottom:.75rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
+          <div><div style="font-weight:600">#${o.id} <span style="font-size:.78rem;color:var(--c-muted)">· ${new Date(o.created_at).toLocaleDateString('vi-VN')}</span></div>
+          <div style="font-size:.82rem;color:var(--c-muted);margin-top:.2rem">${o.item_names || ''}</div></div>
+          <div style="text-align:right"><div style="font-weight:700;color:var(--c-gold)">${(o.total || 0).toLocaleString('vi-VN')}₫</div>
+          <div style="font-size:.78rem;margin-top:.2rem;color:${sColor[o.status] || '#aaa'}">${sLabel[o.status] || o.status}</div></div>
+        </div>`).join('');
+    }).catch(() => {
+      const el = document.getElementById('orderHistorySection');
+      if (el) el.innerHTML = '<div style="color:var(--c-muted);font-size:.85rem;padding:1rem">Không thể tải lịch sử đơn hàng</div>';
+    });
+  }
+}
 
 // ─── ADMIN ────────────────────────────────────────────────────
 function renderAdmin() {
@@ -955,21 +1161,31 @@ function initSearch() {
   const input = document.getElementById('searchInput');
   const results = document.getElementById('searchResults');
   if (!input || !results) return;
+  let searchTimer;
   input.addEventListener('input', () => {
-    const q = input.value.toLowerCase().trim();
+    clearTimeout(searchTimer);
+    const q = input.value.trim();
     if (!q) { results.classList.add('hidden'); return; }
-    const matched = PRODUCTS.filter(p =>
-      p.name.toLowerCase().includes(q) ||
-      p.region.toLowerCase().includes(q) ||
-      (p.grape || '').toLowerCase().includes(q)
-    ).slice(0, 5);
-    if (!matched.length) { results.innerHTML = `<div style="padding:1rem;color:var(--c-muted);font-size:.88rem">Không tìm thấy kết quả</div>`; }
-    else results.innerHTML = matched.map(p => `
-      <div class="search-result-item" style="display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;cursor:pointer;transition:background .2s;border-bottom:1px solid var(--c-border)" onmouseover="this.style.background='var(--c-surface2)'" onmouseout="this.style.background=''" onclick="navigate('product-detail',{id:${p.id}});results.classList.add('hidden');input.value=''">
-        <img src="${p.img}" style="width:36px;height:48px;object-fit:cover;border-radius:4px" onerror="this.src='images/placeholder.jpg'">
-        <div><div style="font-size:.88rem;font-weight:500">${p.name}</div><div style="font-size:.75rem;color:var(--c-muted)">${p.region} · ${formatPrice(p.price)}</div></div>
-      </div>`).join('');
-    results.classList.remove('hidden');
+    searchTimer = setTimeout(async () => {
+      let matched = [];
+      if (typeof window.VINOVA_API !== 'undefined') {
+        try {
+          const data = await window.VINOVA_API.products.search(q);
+          matched = (data.products || []).map(p => ({ ...p, oldPrice: p.old_price }));
+        } catch { /* fallback */ }
+      }
+      if (!matched.length) {
+        const ql = q.toLowerCase();
+        matched = PRODUCTS.filter(p => p.name.toLowerCase().includes(ql) || p.region.toLowerCase().includes(ql) || (p.grape || '').toLowerCase().includes(ql)).slice(0, 5);
+      }
+      if (!matched.length) { results.innerHTML = `<div style="padding:1rem;color:var(--c-muted);font-size:.88rem">Không tìm thấy kết quả</div>`; }
+      else results.innerHTML = matched.slice(0, 5).map(p => `
+        <div style="display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;cursor:pointer;transition:background .2s;border-bottom:1px solid var(--c-border)" onmouseover="this.style.background='var(--c-surface2)'" onmouseout="this.style.background=''" onclick="navigate('product-detail',{id:${p.id}});document.getElementById('searchResults').classList.add('hidden');document.getElementById('searchInput').value=''">
+          <img src="${p.img}" style="width:36px;height:48px;object-fit:cover;border-radius:4px" onerror="this.src='images/placeholder.jpg'">
+          <div><div style="font-size:.88rem;font-weight:500">${p.name}</div><div style="font-size:.75rem;color:var(--c-muted)">${p.region} · ${formatPrice(p.price)}</div></div>
+        </div>`).join('');
+      results.classList.remove('hidden');
+    }, 300);
   });
   document.addEventListener('click', (e) => { if (!e.target.closest('.search-wrap')) results.classList.add('hidden'); });
 }
@@ -984,11 +1200,18 @@ document.addEventListener('DOMContentLoaded', () => {
   // Render featured products on homepage
   const featuredContainer = document.getElementById('featuredProducts');
   if (featuredContainer) {
-    featuredContainer.innerHTML = PRODUCTS.slice(0, 4).map(p => productCardHTML(p)).join('');
-    attachProductCardEvents();
+    const loadFeatured = (typeof window.VINOVA_API !== 'undefined')
+      ? window.VINOVA_API.products.list({ sort: 'rating', limit: 4 })
+        .then(d => d.products.map(p => ({ ...p, oldPrice: p.old_price, reviews: p.reviews_count, tasting: { color: '', nose: '', palate: '', finish: '' }, food: p.food_pairing || [] })))
+      : Promise.reject();
+    loadFeatured.catch(() => PRODUCTS.slice(0, 4)).then(products => {
+      featuredContainer.innerHTML = products.map(p => productCardHTML(p)).join('');
+      attachProductCardEvents();
+    });
   }
   // Navigate to hash page
   const hash = window.location.hash.replace('#', '') || 'home';
   navigate(['home', 'products', 'cart', 'checkout', 'account', 'wine-club', 'admin', 'product-detail'].includes(hash) ? hash : 'home');
   console.log('%cVINOVA Premium Wine & Spirits', 'color:#c9a84c;font-size:1.2rem;font-weight:bold');
 });
+

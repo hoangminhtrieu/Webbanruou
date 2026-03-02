@@ -55,6 +55,7 @@ const API = {
         update: (product_id, qty) => apiFetch(`/cart/${product_id}`, { method: 'PUT', body: JSON.stringify({ qty }) }),
         remove: (product_id) => apiFetch(`/cart/${product_id}`, { method: 'DELETE' }),
         clear: () => apiFetch('/cart', { method: 'DELETE' }),
+        merge: (items) => apiFetch('/cart/merge', { method: 'POST', body: JSON.stringify({ items }) }),
     },
 
     // ─── ORDERS ─────────────────────────────────────
@@ -120,6 +121,16 @@ window.doLogin = async function () {
     try {
         const data = await API.auth.login({ username: usernameEl.value, password: passwordEl.value });
         saveAuth(data.token, data.user);
+
+        // Merge giỏ hàng localStorage lên server
+        const localCart = JSON.parse(localStorage.getItem('vinova_cart') || '[]');
+        if (localCart.length > 0) {
+            try {
+                await API.cart.merge(localCart);
+                localStorage.removeItem('vinova_cart');
+            } catch { /* bỏ qua nếu merge thất bại */ }
+        }
+
         window.closeLoginModal();
         window.showToast(`Chào mừng ${data.user.full_name}! 🍷`, 'success');
         updateNavForAuth(data.user);

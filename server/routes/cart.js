@@ -64,4 +64,29 @@ router.delete('/', authMiddleware, (req, res) => {
     res.json({ message: 'Đã xóa toàn bộ giỏ hàng' });
 });
 
+// POST /api/cart/merge — Merge localStorage cart khi đăng nhập
+router.post('/merge', authMiddleware, (req, res) => {
+    const { items = [] } = req.body;
+    if (!Array.isArray(items)) return res.status(400).json({ error: 'items phải là mảng' });
+    const db = getDB();
+    let merged = 0;
+    for (const item of items) {
+        const pid = item.product_id || item.productId;
+        const qty = Math.max(1, +item.qty || 1);
+        if (!pid) continue;
+        const product = db.prepare('SELECT id, stock FROM products WHERE id = ? AND is_active = 1').get(pid);
+        if (!product) continue;
+        const existing = db.prepare('SELECT id, qty FROM cart_items WHERE user_id = ? AND product_id = ?').get(req.user.id, pid);
+        if (existing) {
+            const newQty = Math.min(existing.qty + qty, product.stock);
+            db.prepare('UPDATE cart_items SET qty = ? WHERE id = ?').run(newQty, existing.id);
+        } else {
+            db.prepare('INSERT INTO cart_items (user_id, product_id, qty) VALUES (?, ?, ?)').run(req.user.id, pid, Math.min(qty, product.stock));
+        }
+        merged++;
+    }
+    res.json({ message: `Đã merge ${merged} sản phẩm vào giỏ hàng` });
+});
+
 module.exports = router;
+
