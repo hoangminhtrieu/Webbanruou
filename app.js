@@ -1066,25 +1066,103 @@ function renderAccount() {
 function renderAccountInfo(user, container) {
   const tierColor = { silver: '#aaa', gold: '#c9a84c', platinum: '#5ce8e8' }[user.tier] || '#aaa';
   container.innerHTML = `
-    <div class="animate-up" style="display:flex;flex-direction:column;gap:1.5rem">
-      <div style="padding:1.5rem;background:var(--c-surface1);border-radius:var(--radius);border:1px solid var(--c-border)">
-        <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap">
-          <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--c-red-wine),var(--c-gold));display:flex;align-items:center;justify-content:center;font-size:1.8rem;color:#fff;font-weight:700">
-            ${(user.full_name || '?')[0].toUpperCase()}
+    <div style="display:grid;grid-template-columns:260px 1fr;gap:2rem;align-items:start">
+      <!-- Sidebar -->
+      <div class="card animate-up">
+        <div class="card__body" style="text-align:center;padding:2rem">
+          <div
+            style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--c-gold),var(--c-red-wine));display:flex;align-items:center;justify-content:center;font-size:2rem;margin:0 auto 1rem;color:#fff;font-weight:700">
+            ${(user.full_name || '?')[0].toUpperCase()}</div>
+          <div style="font-weight:600;font-size:1.05rem">${user.full_name || 'Khách hàng'}</div>
+          <div style="font-size:.82rem;color:var(--c-muted)">${user.email || ''}</div>
+          <div style="margin:.75rem 0"><span style="color:${tierColor};padding:.2rem .65rem;border-radius:999px;border:1px solid ${tierColor}50;font-size:.72rem;font-weight:600;text-transform:uppercase;background:${tierColor}15">★ Thành viên ${user.tier || 'Silver'}</span></div>
+          <div style="font-size:.8rem;color:var(--c-muted)">Điểm tích lũy: <strong style="color:var(--c-gold)">${(user.points || 0).toLocaleString()} points</strong></div>
+        </div>
+        <div class="card__footer" style="display:flex;flex-direction:column;gap:0" id="accountSidebar">
+          <button class="admin-nav-item active" data-section="orders">📋 Đơn hàng của tôi</button>
+          <button class="admin-nav-item" data-section="wishlist">♡ Danh sách yêu thích</button>
+          <button class="admin-nav-item" data-section="address">📍 Địa chỉ giao hàng</button>
+          <button class="admin-nav-item" data-section="notifications">🔔 Thông báo</button>
+          <button class="admin-nav-item" onclick="navigate('wine-club')">★ Wine Club</button>
+          <button class="admin-nav-item" data-section="settings">⚙ Cài đặt tài khoản</button>
+          <button class="admin-nav-item" style="color:var(--c-error)" onclick="window.closeLoginModal();window.dispatchEvent(new CustomEvent('auth:logout'));">→ Đăng xuất</button>
+        </div>
+      </div>
+      <!-- Content -->
+      <div id="accountContentArea" class="animate-up" style="display:flex;flex-direction:column;gap:1.5rem">
+        <!-- Orders -->
+        <div class="account-section" id="account-orders">
+          <h2 class="serif" style="margin-bottom:1.5rem">📋 Đơn hàng của tôi</h2>
+          <div id="orderHistorySection"><div style="text-align:center;padding:2rem;color:var(--c-muted)">⏳ Đang tải lịch sử đơn hàng...</div></div>
+        </div>
+        <!-- Wishlist -->
+        <div class="account-section hidden" id="account-wishlist">
+          <h2 class="serif" style="margin-bottom:1.5rem">♡ Danh sách yêu thích</h2>
+          <div style="text-align:center;padding:3rem;background:var(--c-surface1);border-radius:var(--radius);border:1px dashed var(--c-border);color:var(--c-muted)">
+            <div style="font-size:2rem;margin-bottom:1rem">💔</div>
+            Bạn chưa có sản phẩm yêu thích nào.
           </div>
-          <div>
-            <div style="font-size:1.2rem;font-weight:600">${user.full_name || 'Khách hàng'}</div>
-            <div style="color:var(--c-muted);font-size:.85rem">${user.email || ''}</div>
-            <div style="margin-top:.4rem"><span style="color:${tierColor};font-weight:600;text-transform:uppercase;font-size:.8rem">★ ${user.tier || 'Silver'} Member</span></div>
+        </div>
+        <!-- Address -->
+        <div class="account-section hidden" id="account-address">
+          <h2 class="serif" style="margin-bottom:1.5rem">📍 Địa chỉ giao hàng</h2>
+           <div style="padding:1.5rem;background:var(--c-surface1);border-radius:var(--radius);border:1px solid var(--c-border)">
+             <div style="display:flex;justify-content:space-between;margin-bottom:1rem">
+                <div>
+                  <div style="font-weight:600">${user.full_name || 'Khách hàng'} <span class="badge badge--green" style="margin-left:.5rem">Mặc định</span></div>
+                  <div style="font-size:.85rem;color:var(--c-muted);margin-top:.4rem">0912 345 678</div>
+                  <div style="font-size:.85rem;color:var(--c-muted);margin-top:.2rem">123 Nguyễn Văn Linh, Quận 7, TP. Hồ Chí Minh</div>
+                </div>
+                <button class="btn btn--outline btn--sm">Sửa</button>
+             </div>
+             <button class="btn btn--outline" style="width:100%">+ Thêm địa chỉ mới</button>
+           </div>
+        </div>
+        <!-- Notifications -->
+        <div class="account-section hidden" id="account-notifications">
+          <h2 class="serif" style="margin-bottom:1.5rem">🔔 Thông báo</h2>
+          <div style="text-align:center;padding:3rem;background:var(--c-surface1);border-radius:var(--radius);border:1px dashed var(--c-border);color:var(--c-muted)">
+            <div style="font-size:2rem;margin-bottom:1rem">🔕</div>
+            Bạn không có thông báo mới.
           </div>
-          <div style="margin-left:auto;text-align:right">
-            <div style="font-size:1.5rem;font-weight:700;color:var(--c-gold)">${(user.points || 0).toLocaleString()}</div>
-            <div style="font-size:.75rem;color:var(--c-muted)">điểm tích lũy</div>
+        </div>
+        <!-- Settings -->
+        <div class="account-section hidden" id="account-settings">
+          <h2 class="serif" style="margin-bottom:1.5rem">⚙ Cài đặt tài khoản</h2>
+          <div style="display:flex;flex-direction:column;gap:1.5rem">
+            <div class="input-row">
+              <div class="input-group">
+                 <label>Họ và tên</label>
+                 <input class="input" value="${user.full_name || ''}">
+              </div>
+              <div class="input-group">
+                 <label>Số điện thoại</label>
+                 <input class="input" value="0912 345 678">
+              </div>
+            </div>
+            <div class="input-group">
+               <label>Email</label>
+               <input class="input" value="${user.email || ''}" disabled style="opacity:0.7">
+               <div style="font-size:.75rem;color:var(--c-muted);margin-top:.4rem">Email không thể thay đổi sau khi đăng ký.</div>
+            </div>
+            <button class="btn btn--primary" style="align-self:flex-start" onclick="showToast('Đã lưu thay đổi thông tin!','success')">Lưu thay đổi</button>
           </div>
         </div>
       </div>
-      <div id="orderHistorySection"><div style="text-align:center;padding:2rem;color:var(--c-muted)">⏳ Đang tải lịch sử đơn hàng...</div></div>
     </div>`;
+
+  // Attach event listeners for tabs
+  const sidebarButtons = document.querySelectorAll('#accountSidebar .admin-nav-item[data-section]');
+  sidebarButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      sidebarButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const sectionId = 'account-' + btn.dataset.section;
+      document.querySelectorAll('#accountContentArea .account-section').forEach(sec => {
+        sec.classList.toggle('hidden', sec.id !== sectionId);
+      });
+    });
+  });
 
   if (typeof window.VINOVA_API !== 'undefined') {
     window.VINOVA_API.orders.list().then(data => {
@@ -1094,16 +1172,15 @@ function renderAccountInfo(user, container) {
       if (!orders.length) { el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--c-muted)">Chưa có đơn hàng nào</div>'; return; }
       const sLabel = { pending: 'Chờ xác nhận', confirmed: 'Đã xác nhận', shipping: 'Đang giao', completed: 'Hoàn thành', cancelled: 'Đã hủy' };
       const sColor = { pending: '#f39c12', confirmed: '#3498db', shipping: '#9b59b6', completed: '#27ae60', cancelled: '#e74c3c' };
-      el.innerHTML = `<h4 style="margin-bottom:1rem">Lịch sử đơn hàng (${orders.length})</h4>` +
-        orders.map(o => `<div style="padding:1rem;background:var(--c-surface1);border-radius:var(--radius-sm);border:1px solid var(--c-border);margin-bottom:.75rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
-          <div><div style="font-weight:600">#${o.id} <span style="font-size:.78rem;color:var(--c-muted)">· ${new Date(o.created_at).toLocaleDateString('vi-VN')}</span></div>
-          <div style="font-size:.82rem;color:var(--c-muted);margin-top:.2rem">${o.item_names || ''}</div></div>
-          <div style="text-align:right"><div style="font-weight:700;color:var(--c-gold)">${(o.total || 0).toLocaleString('vi-VN')}₫</div>
-          <div style="font-size:.78rem;margin-top:.2rem;color:${sColor[o.status] || '#aaa'}">${sLabel[o.status] || o.status}</div></div>
+      el.innerHTML = orders.map(o => `<div style="padding:1.25rem;background:var(--c-surface1);border-radius:var(--radius-sm);border:1px solid var(--c-border);margin-bottom:.75rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem">
+          <div><div style="font-weight:600;font-size:1.1rem">#${o.id} <span style="font-size:.8rem;color:var(--c-muted);font-weight:400;margin-left:.75rem">· ${new Date(o.created_at).toLocaleDateString('vi-VN')}</span></div>
+          <div style="font-size:.85rem;color:var(--c-muted);margin-top:.4rem">${o.item_names || 'Sản phẩm rượu vang cao cấp'}</div></div>
+          <div style="text-align:right"><div style="font-weight:700;color:var(--c-gold);font-size:1.1rem">${(o.total || 0).toLocaleString('vi-VN')}₫</div>
+          <div style="font-size:.8rem;margin-top:.4rem;padding:.2rem .6rem;border-radius:99px;display:inline-block;background:${sColor[o.status]}15;color:${sColor[o.status]};font-weight:600">${sLabel[o.status] || o.status}</div></div>
         </div>`).join('');
     }).catch(() => {
       const el = document.getElementById('orderHistorySection');
-      if (el) el.innerHTML = '<div style="color:var(--c-muted);font-size:.85rem;padding:1rem">Không thể tải lịch sử đơn hàng</div>';
+      if (el) el.innerHTML = '<div style="color:var(--c-error);font-size:.85rem;padding:1rem;text-align:center">Không thể tải lịch sử đơn hàng. Hoặc hệ thống đang bảo trì.</div>';
     });
   }
 }
