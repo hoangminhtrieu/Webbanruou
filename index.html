@@ -934,30 +934,30 @@
                 <option>Quý này</option>
                 <option>Năm nay</option>
               </select>
-              <button class="btn btn--primary btn--sm">+ Thêm sản phẩm</button>
+              <button class="btn btn--primary btn--sm" onclick="openProductModal()">+ Thêm sản phẩm</button>
             </div>
           </div>
           <!-- KPIs -->
           <div class="kpi-grid">
             <div class="kpi-card"><span class="kpi-card__icon">💰</span>
               <div class="kpi-card__label">Doanh thu tháng</div>
-              <div class="kpi-card__value">4.85 tỷ</div>
-              <div class="kpi-card__change up">↑ +18.5% so với tháng trước</div>
+              <div class="kpi-card__value" id="admin-kpi-revenue">0₫</div>
+              <div class="kpi-card__change" id="admin-kpi-revenue-change">-</div>
             </div>
             <div class="kpi-card"><span class="kpi-card__icon">📋</span>
               <div class="kpi-card__label">Đơn hàng</div>
-              <div class="kpi-card__value">1,247</div>
-              <div class="kpi-card__change up">↑ +12.3%</div>
+              <div class="kpi-card__value" id="admin-kpi-orders">0</div>
+              <div class="kpi-card__change" id="admin-kpi-orders-change">-</div>
             </div>
             <div class="kpi-card"><span class="kpi-card__icon">👤</span>
               <div class="kpi-card__label">Khách hàng mới</div>
-              <div class="kpi-card__value">342</div>
-              <div class="kpi-card__change up">↑ +8.7%</div>
+              <div class="kpi-card__value" id="admin-kpi-customers">0</div>
+              <div class="kpi-card__change" id="admin-kpi-customers-change">Trong tháng</div>
             </div>
             <div class="kpi-card"><span class="kpi-card__icon">🛒</span>
               <div class="kpi-card__label">Giá trị đơn TB (AOV)</div>
-              <div class="kpi-card__value">3.89M₫</div>
-              <div class="kpi-card__change down">↓ -2.1%</div>
+              <div class="kpi-card__value" id="admin-kpi-aov">0₫</div>
+              <div class="kpi-card__change" id="admin-kpi-aov-change">-</div>
             </div>
           </div>
           <!-- Charts row -->
@@ -974,39 +974,8 @@
             </div>
             <div class="chart-placeholder">
               <div style="font-size:.9rem;font-weight:600;margin-bottom:1rem">Danh mục bán chạy</div>
-              <div style="display:flex;flex-direction:column;gap:.75rem">
-                <div>
-                  <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:.3rem">
-                    <span>Vang đỏ</span><span>42%</span>
-                  </div>
-                  <div style="height:8px;background:var(--c-border);border-radius:4px">
-                    <div style="height:100%;width:42%;background:var(--c-red-wine);border-radius:4px"></div>
-                  </div>
-                </div>
-                <div>
-                  <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:.3rem">
-                    <span>Champagne</span><span>28%</span>
-                  </div>
-                  <div style="height:8px;background:var(--c-border);border-radius:4px">
-                    <div style="height:100%;width:28%;background:var(--c-gold);border-radius:4px"></div>
-                  </div>
-                </div>
-                <div>
-                  <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:.3rem">
-                    <span>Whisky</span><span>18%</span>
-                  </div>
-                  <div style="height:8px;background:var(--c-border);border-radius:4px">
-                    <div style="height:100%;width:18%;background:#3b82f6;border-radius:4px"></div>
-                  </div>
-                </div>
-                <div>
-                  <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:.3rem">
-                    <span>Vang trắng</span><span>12%</span>
-                  </div>
-                  <div style="height:8px;background:var(--c-border);border-radius:4px">
-                    <div style="height:100%;width:12%;background:var(--c-success);border-radius:4px"></div>
-                  </div>
-                </div>
+              <div style="display:flex;flex-direction:column;gap:.75rem" id="admin-type-breakdown">
+                <!-- Danh mục sẽ được render bằng JS -->
               </div>
             </div>
           </div>
@@ -1028,47 +997,8 @@
                   <th>Thao tác</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr>
-                  <td>#VNV-04821</td>
-                  <td>Nguyễn Văn A</td>
-                  <td>Château Lafite × 1</td>
-                  <td style="color:var(--c-gold-light)">18,500,000₫</td>
-                  <td><span class="status-dot blue"></span>Xác nhận</td>
-                  <td><button class="btn btn--sm btn--outline">Xử lý</button></td>
-                </tr>
-                <tr>
-                  <td>#VNV-04820</td>
-                  <td>Trần Thị B</td>
-                  <td>Dom Pérignon × 2</td>
-                  <td style="color:var(--c-gold-light)">14,400,000₫</td>
-                  <td><span class="status-dot yellow"></span>Đang giao</td>
-                  <td><button class="btn btn--sm btn--outline">Theo dõi</button></td>
-                </tr>
-                <tr>
-                  <td>#VNV-04819</td>
-                  <td>Lê Minh C</td>
-                  <td>Opus One × 1</td>
-                  <td style="color:var(--c-gold-light)">12,800,000₫</td>
-                  <td><span class="status-dot green"></span>Hoàn thành</td>
-                  <td><button class="btn btn--sm btn--outline">Chi tiết</button></td>
-                </tr>
-                <tr>
-                  <td>#VNV-04818</td>
-                  <td>Phạm Quang D</td>
-                  <td>Macallan 25 × 1</td>
-                  <td style="color:var(--c-gold-light)">52,000,000₫</td>
-                  <td><span class="status-dot green"></span>Hoàn thành</td>
-                  <td><button class="btn btn--sm btn--outline">Chi tiết</button></td>
-                </tr>
-                <tr>
-                  <td>#VNV-04817</td>
-                  <td>Hoàng Thu E</td>
-                  <td>Cloudy Bay × 3</td>
-                  <td style="color:var(--c-gold-light)">2,550,000₫</td>
-                  <td><span class="status-dot red"></span>Hoàn tiền</td>
-                  <td><button class="btn btn--sm btn--danger">Xử lý</button></td>
-                </tr>
+              <tbody id="admin-recent-orders-tbody">
+                <!-- Data will be rendered by JS -->
               </tbody>
             </table>
           </div>
@@ -1099,32 +1029,16 @@
                   <th>Thao tác</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr>
-                  <td>#VNV-04821</td>
-                  <td>28/02 15:20</td>
-                  <td>Nguyễn Văn A</td>
-                  <td style="color:var(--c-gold-light)">18.5M₫</td>
-                  <td>Nhanh 2h</td>
-                  <td><span class="status-dot blue"></span>Xác nhận</td>
-                  <td><button class="btn btn--sm btn--primary">Xác nhận</button></td>
-                </tr>
-                <tr>
-                  <td>#VNV-04820</td>
-                  <td>28/02 12:45</td>
-                  <td>Trần Thị B</td>
-                  <td style="color:var(--c-gold-light)">14.4M₫</td>
-                  <td>Nhanh 2h</td>
-                  <td><span class="status-dot yellow"></span>Đang giao</td>
-                  <td><button class="btn btn--sm btn--outline">Theo dõi</button></td>
-                </tr>
+              <tbody id="admin-orders-tbody">
+                <!-- Orders will be rendered here via JS -->
               </tbody>
             </table>
           </div>
         </div>
         <div class="admin-section hidden" id="admin-products-admin">
           <div class="admin-header">
-            <h2 class="admin-header__title">🍷 Quản lý sản phẩm</h2><button class="btn btn--primary btn--sm">+ Thêm sản
+            <h2 class="admin-header__title">🍷 Quản lý sản phẩm</h2><button class="btn btn--primary btn--sm"
+              onclick="openProductModal()">+ Thêm sản
               phẩm</button>
           </div>
           <div style="margin-bottom:1rem;display:flex;gap:.75rem">
@@ -1149,34 +1063,8 @@
                   <th>Thao tác</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr>
-                  <td>CH-LAF-18</td>
-                  <td>Château Lafite Rothschild 2018</td>
-                  <td>Bordeaux, Pháp</td>
-                  <td>18,500,000₫</td>
-                  <td style="color:var(--c-warn)">12 chai</td>
-                  <td><span class="badge badge--green">Có hàng</span></td>
-                  <td><button class="btn btn--sm btn--outline">Sửa</button></td>
-                </tr>
-                <tr>
-                  <td>DRC-2017</td>
-                  <td>Domaine de la Romanée-Conti 2017</td>
-                  <td>Burgundy, Pháp</td>
-                  <td>95,000,000₫</td>
-                  <td style="color:var(--c-error)">3 chai</td>
-                  <td><span class="badge badge--red">Gần hết</span></td>
-                  <td><button class="btn btn--sm btn--outline">Sửa</button></td>
-                </tr>
-                <tr>
-                  <td>MCL-25</td>
-                  <td>Macallan 25 Year Sherry Oak</td>
-                  <td>Speyside, Scotland</td>
-                  <td>52,000,000₫</td>
-                  <td style="color:var(--c-error)">5 chai</td>
-                  <td><span class="badge badge--red">Gần hết</span></td>
-                  <td><button class="btn btn--sm btn--outline">Sửa</button></td>
-                </tr>
+              <tbody id="admin-products-tbody">
+                <!-- Products will be rendered here via JS -->
               </tbody>
             </table>
           </div>
@@ -1212,14 +1100,44 @@
           <div class="admin-header">
             <h2 class="admin-header__title">📦 Quản lý kho hàng</h2>
           </div>
-          <p style="color:var(--c-muted)">Quản lý tồn kho theo lô (batch/vintage), số chai, vị trí kho và lịch sử nhập
-            xuất.</p>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Tên sản phẩm</th>
+                  <th>Loại</th>
+                  <th>Vùng</th>
+                  <th>Tồn kho (thực tế)</th>
+                </tr>
+              </thead>
+              <tbody id="admin-inventory-full-tbody">
+                <!-- Inventory will be populated here -->
+              </tbody>
+            </table>
+          </div>
         </div>
         <div class="admin-section hidden" id="admin-customers">
           <div class="admin-header">
             <h2 class="admin-header__title">👤 Khách hàng</h2>
           </div>
-          <p style="color:var(--c-muted)">Quản lý CRM khách hàng, phân nhóm và hành vi mua hàng.</p>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Email</th>
+                  <th>Họ tên</th>
+                  <th>Quyền</th>
+                  <th>Hạng</th>
+                  <th>Ngày ĐK</th>
+                </tr>
+              </thead>
+              <tbody id="admin-customers-tbody">
+                <!-- Customers will be populated here -->
+              </tbody>
+            </table>
+          </div>
         </div>
         <div class="admin-section hidden" id="admin-promotions">
           <div class="admin-header" style="display:flex; justify-content:space-between; align-items:center;">
@@ -1346,6 +1264,73 @@
           <input type="number" class="input" id="newPromoDiscount" min="1" max="100" placeholder="10">
         </div>
         <button class="btn btn--primary" style="width:100%" onclick="createPromoCode()">Tạo mới</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ PRODUCT MODAL ════════ -->
+  <div class="modal-overlay" id="productModal" role="dialog" aria-modal="true">
+    <div class="modal" style="max-width:600px; max-height: 90vh; overflow-y: auto;">
+      <div class="modal__header">
+        <h3 class="serif" style="margin:0;font-size:1.5rem">Thêm sản phẩm mới</h3>
+        <button class="modal__close" onclick="closeProductModal()" aria-label="Close">✕</button>
+      </div>
+      <div class="modal__body" style="display:flex;flex-direction:column;gap:1rem">
+        <div class="grid-2" style="gap:1rem">
+          <div class="input-group">
+            <label>Tên sản phẩm *</label>
+            <input class="input" id="newProductName" placeholder="vd: Château Lafite 2018">
+          </div>
+          <div class="input-group">
+            <label>Vùng *</label>
+            <input class="input" id="newProductRegion" placeholder="vd: Bordeaux, Pháp">
+          </div>
+        </div>
+
+        <div class="grid-2" style="gap:1rem">
+          <div class="input-group">
+            <label>Loại *</label>
+            <select class="input" id="newProductType">
+              <option value="Vang đỏ">Vang đỏ</option>
+              <option value="Vang trắng">Vang trắng</option>
+              <option value="Champagne">Champagne</option>
+              <option value="Whisky">Whisky</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label>Giống nho / Thành phần</label>
+            <input class="input" id="newProductGrape" placeholder="vd: Cabernet Sauvignon">
+          </div>
+        </div>
+
+        <div class="grid-3" style="gap:1rem">
+          <div class="input-group">
+            <label>Giá bán (VND) *</label>
+            <input type="number" class="input" id="newProductPrice" placeholder="1500000">
+          </div>
+          <div class="input-group">
+            <label>Tồn kho</label>
+            <input type="number" class="input" id="newProductStock" value="10">
+          </div>
+          <div class="input-group">
+            <label>Nồng độ cồn (ABV)</label>
+            <input class="input" id="newProductAbv" placeholder="vd: 13.5%">
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label>URL Hình ảnh (tùy chọn)</label>
+          <input class="input" id="newProductImg" placeholder="https://example.com/image.jpg">
+        </div>
+
+        <div class="input-group">
+          <label>Mô tả chi tiết</label>
+          <textarea class="input" id="newProductDesc" rows="3"
+            placeholder="Thông tin về hương vị, lịch sử..."></textarea>
+        </div>
+
+        <button class="btn btn--primary" style="width:100%; margin-top:.5rem;" onclick="submitNewProduct()">Lưu Sản
+          Phẩm</button>
       </div>
     </div>
   </div>

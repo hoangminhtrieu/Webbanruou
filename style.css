@@ -444,6 +444,7 @@ h4 {
   border-radius: var(--radius-sm);
   transition: var(--transition);
   position: relative;
+  white-space: nowrap;
 }
 
 .navbar__link:hover,
@@ -768,7 +769,6 @@ h4 {
 }
 
 .product-card__actions .btn {
-  flex: 1 1 0%;
   min-width: 0;
   padding-left: 0.25rem;
   padding-right: 0.25rem;
@@ -777,6 +777,14 @@ h4 {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.product-card__actions .btn:first-child {
+  flex: 2;
+}
+
+.product-card__actions .btn:last-child {
+  flex: 1;
 }
 
 .product-card__badge {

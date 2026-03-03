@@ -131,6 +131,29 @@ window.doLogin = async function () {
             } catch { /* bỏ qua nếu merge thất bại */ }
         }
 
+        // Lấy state từ server (giỏ hàng, danh sách yêu thích, & thông tin cá nhân)
+        try {
+            const [cartRes, wishRes, profileRes] = await Promise.all([
+                API.cart.get(),
+                API.users.wishlist(),
+                API.users.profile() // Lấy thêm Profile chứa Điểm và Hạng
+            ]);
+
+            // Lưu đè lại user với data có Điểm/Hạng
+            if (profileRes && profileRes.user) {
+                data.user = { ...data.user, ...profileRes.user };
+                saveAuth(data.token, data.user);
+            }
+
+            if (typeof window.state !== 'undefined') {
+                window.state.cart = cartRes.items || [];
+                window.state.wishlist = (wishRes.items || []).map(i => i.id);
+                window.state.user = data.user;
+                window.updateCartBadge?.();
+                if (window.state.page === 'cart') window.renderCart?.();
+            }
+        } catch { }
+
         window.closeLoginModal();
         window.showToast(`Chào mừng ${data.user.full_name}! 🍷`, 'success');
         updateNavForAuth(data.user);
@@ -229,7 +252,22 @@ window.addEventListener('message', (e) => {
 (function initAuth() {
     const user = getAuthUser();
     if (user) {
-        document.addEventListener('DOMContentLoaded', () => updateNavForAuth(user));
+        document.addEventListener('DOMContentLoaded', async () => {
+            updateNavForAuth(user);
+            // Fetch updated state từ API
+            try {
+                const [cartRes, wishRes] = await Promise.all([
+                    API.cart.get(),
+                    API.users.wishlist()
+                ]);
+                if (typeof window.state !== 'undefined') {
+                    window.state.cart = cartRes.items || [];
+                    window.state.wishlist = (wishRes.items || []).map(i => i.id);
+                    window.updateCartBadge?.();
+                    if (window.state.page === 'cart') window.renderCart?.();
+                }
+            } catch { }
+        });
     }
 })();
 

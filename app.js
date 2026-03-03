@@ -531,6 +531,13 @@ function initAgeGate() {
 
 // ─── NAVIGATION ───────────────────────────────────────────────
 function navigate(page, data = {}) {
+  // Check admin routing block
+  if (page === 'admin' && (!state.user || state.user.role !== 'admin')) {
+    showToast('Bạn không có quyền truy cập trang quản trị', 'error');
+    navigate('home');
+    return;
+  }
+
   state.page = page;
   document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
   const target = document.getElementById(`page-${page}`);
@@ -625,7 +632,7 @@ function productCardHTML(p) {
         ${isWishlisted ? '♥' : '♡'}
       </button>
       <div class="product-card__actions">
-        <button class="btn btn--primary btn--sm" data-add="${p.id}">🛒 Thêm vào giỏ</button>
+        <button class="btn btn--primary btn--sm" data-add="${p.id}">Thêm vào giỏ</button>
         <button class="btn btn--outline btn--sm" data-detail="${p.id}">Chi tiết</button>
       </div>
     </div>
@@ -1109,7 +1116,10 @@ function renderAccount() {
 }
 
 function renderAccountInfo(user, container) {
-  const tierColor = { silver: '#aaa', gold: '#c9a84c', platinum: '#5ce8e8' }[user.tier] || '#aaa';
+  const tierValue = user.tier || 'Silver';
+  const tierColor = { silver: '#aaa', gold: '#c9a84c', platinum: '#5ce8e8' }[tierValue.toLowerCase()] || '#aaa';
+  const displayPoints = (user.points || 0).toLocaleString('vi-VN');
+
   container.innerHTML = `
     <div style="display:grid;grid-template-columns:260px 1fr;gap:2rem;align-items:start">
       <!-- Sidebar -->
@@ -1120,8 +1130,8 @@ function renderAccountInfo(user, container) {
             ${(user.full_name || '?')[0].toUpperCase()}</div>
           <div style="font-weight:600;font-size:1.05rem">${user.full_name || 'Khách hàng'}</div>
           <div style="font-size:.82rem;color:var(--c-muted)">${user.email || ''}</div>
-          <div style="margin:.75rem 0"><span style="color:${tierColor};padding:.2rem .65rem;border-radius:999px;border:1px solid ${tierColor}50;font-size:.72rem;font-weight:600;text-transform:uppercase;background:${tierColor}15">★ Thành viên ${user.tier || 'Silver'}</span></div>
-          <div style="font-size:.8rem;color:var(--c-muted)">Điểm tích lũy: <strong style="color:var(--c-gold)">${(user.points || 0).toLocaleString()} points</strong></div>
+          <div style="margin:.75rem 0"><span style="color:${tierColor};padding:.2rem .65rem;border-radius:999px;border:1px solid ${tierColor}50;font-size:.72rem;font-weight:600;text-transform:uppercase;background:${tierColor}15">★ Thành viên ${tierValue}</span></div>
+          <div style="font-size:.8rem;color:var(--c-muted)">Điểm tích lũy: <strong style="color:var(--c-gold)">${displayPoints} points</strong></div>
         </div>
         <div class="card__footer" style="display:flex;flex-direction:column;gap:0" id="accountSidebar">
           <button class="admin-nav-item active" data-section="orders">📋 Đơn hàng của tôi</button>
@@ -1231,17 +1241,224 @@ function renderAccountInfo(user, container) {
 }
 
 function renderAdmin() {
+  const sections = {
+    'dashboard': renderAdminDashboard,
+    'orders': renderAdminOrders,
+    'products-admin': renderAdminProducts,
+    'inventory': renderAdminInventory,
+    'customers': renderAdminCustomers,
+    'reports': renderAdminDashboard, // Re-use dashboard data
+    'promotions': renderPromosAdmin,
+    'settings': () => { } // TODO
+  };
+
   document.querySelectorAll('.admin-nav-item').forEach(item => {
-    item.addEventListener('click', () => {
+    // Prevent duplicate listeners
+    const newItem = item.cloneNode(true);
+    item.parentNode.replaceChild(newItem, item);
+
+    newItem.addEventListener('click', () => {
       document.querySelectorAll('.admin-nav-item').forEach(i => i.classList.remove('active'));
-      item.classList.add('active');
-      const section = item.dataset.section;
+      newItem.classList.add('active');
+      const section = newItem.dataset.section;
       document.querySelectorAll('.admin-section').forEach(s => s.classList.toggle('hidden', s.id !== `admin-${section}`));
-      if (section === 'promotions') renderPromosAdmin();
+
+      if (sections[section]) sections[section]();
     });
   });
-  renderCharts();
-  renderPromosAdmin();
+
+  // Initial render
+  setTimeout(() => renderAdminDashboard(), 100);
+}
+
+async function renderAdminDashboard() {
+  if (typeof window.VINOVA_API === 'undefined') return;
+  try {
+    const data = await window.VINOVA_API.admin.dashboard();
+    const { kpi, type_breakdown, top_products, status_breakdown, monthly_revenue } = data;
+
+    // 1. Update KPIs
+    const elRev = document.getElementById('admin-kpi-revenue');
+    if (elRev) elRev.textContent = formatPrice(kpi.revenue.value);
+    const elRevChange = document.getElementById('admin-kpi-revenue-change');
+    if (elRevChange) {
+      elRevChange.textContent = `${kpi.revenue.change >= 0 ? '↑ +' : '↓ '}${kpi.revenue.change}%`;
+      elRevChange.className = `kpi-card__change ${kpi.revenue.change >= 0 ? 'up' : 'down'}`;
+    }
+
+    const elOrd = document.getElementById('admin-kpi-orders');
+    if (elOrd) elOrd.textContent = kpi.orders.value;
+    const elOrdChange = document.getElementById('admin-kpi-orders-change');
+    if (elOrdChange) {
+      elOrdChange.textContent = `${kpi.orders.change >= 0 ? '↑ +' : '↓ '}${kpi.orders.change}%`;
+      elOrdChange.className = `kpi-card__change ${kpi.orders.change >= 0 ? 'up' : 'down'}`;
+    }
+
+    const elCus = document.getElementById('admin-kpi-customers');
+    if (elCus) elCus.textContent = kpi.new_customers.value;
+
+    const elAov = document.getElementById('admin-kpi-aov');
+    if (elAov) elAov.textContent = formatPrice(kpi.aov.value);
+
+    // 2. Type breakdown
+    const typeContainer = document.getElementById('admin-type-breakdown');
+    if (typeContainer && type_breakdown.length > 0) {
+      const totalRev = type_breakdown.reduce((sum, t) => sum + t.revenue, 0);
+      const colors = ['var(--c-red-wine)', 'var(--c-gold)', '#3b82f6', 'var(--c-success)'];
+      typeContainer.innerHTML = type_breakdown.map((t, i) => {
+        const pct = totalRev > 0 ? Math.round((t.revenue / totalRev) * 100) : 0;
+        return `
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:.3rem">
+              <span>${t.type || 'Khác'}</span><span>${pct}%</span>
+            </div>
+            <div style="height:8px;background:var(--c-border);border-radius:4px">
+              <div style="height:100%;width:${pct}%;background:${colors[i % colors.length]};border-radius:4px"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // 3. Top products / Recent Orders 
+    // Usually we fetch admin.getOrders for recent but we will hook up getOrders to the specific page later.
+    const ordersData = await window.VINOVA_API.orders.adminAll({ limit: 5 });
+    const tbody = document.getElementById('admin-recent-orders-tbody');
+    if (tbody) {
+      tbody.innerHTML = ordersData.orders.map(o => `
+        <tr>
+          <td>#${o.id}</td>
+          <td>${o.full_name || o.email || 'Khách vãng lai'}</td>
+          <td>${new Date(o.created_at).toLocaleDateString()}</td>
+          <td style="color:var(--c-gold-light)">${formatPrice(o.total)}</td>
+          <td><span class="status-dot ${o.status === 'completed' ? 'green' : o.status === 'cancelled' ? 'red' : 'yellow'}"></span>${o.status.toUpperCase()}</td>
+          <td><button class="btn btn--sm btn--outline" onclick="window.navigate('product-detail', {id: 1})">Chi tiết</button></td>
+        </tr>
+      `).join('');
+    }
+
+    // 4. Chart
+    if (monthly_revenue) {
+      const months = monthly_revenue.map(m => m.month).reverse();
+      const revenueVals = monthly_revenue.map(m => m.revenue).reverse();
+      const maxVal = Math.max(...revenueVals, 1);
+      const chart = document.getElementById('revenueChart');
+      if (chart) {
+        chart.innerHTML = `<div class="chart-bar-wrap">${months.map((m, i) => `
+           <div class="chart-bar-col">
+             <div class="chart-bar" style="height:${(revenueVals[i] / maxVal) * 180}px;background:linear-gradient(to top,var(--c-red-wine),var(--c-gold))" title="${formatPrice(revenueVals[i])}"></div>
+             <div class="chart-label">${m}</div>
+             </div>`).join('')}</div>`;
+      }
+    }
+  } catch (err) {
+    console.error('Render admin dashboard error', err);
+  }
+}
+
+async function renderAdminOrders() {
+  if (typeof window.VINOVA_API === 'undefined') return;
+  try {
+    const data = await window.VINOVA_API.orders.adminAll({ limit: 50 });
+    const tbody = document.getElementById('admin-orders-tbody');
+    if (tbody) {
+      tbody.innerHTML = data.orders.map(o => `
+            <tr>
+              <td>#${o.id}</td>
+              <td>${new Date(o.created_at).toLocaleString('vi-VN')}</td>
+              <td>${o.full_name || o.email || 'Khách vãng lai'}</td>
+              <td style="color:var(--c-gold-light)">${formatPrice(o.total)}</td>
+              <td>${o.shipping_method || 'standard'}</td>
+              <td><span class="status-dot ${o.status === 'completed' ? 'green' : o.status === 'cancelled' ? 'red' : 'yellow'}"></span>${o.status.toUpperCase()}</td>
+              <td>
+                <select onchange="updateOrderStatus(${o.id}, this.value)" class="sort-select" style="padding:.2rem;font-size:.75rem">
+                    <option value="pending" ${o.status === 'pending' ? 'selected' : ''}>Pending</option>
+                    <option value="confirmed" ${o.status === 'confirmed' ? 'selected' : ''}>Confirmed</option>
+                    <option value="shipping" ${o.status === 'shipping' ? 'selected' : ''}>Shipping</option>
+                    <option value="completed" ${o.status === 'completed' ? 'selected' : ''}>Completed</option>
+                    <option value="cancelled" ${o.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                </select>
+              </td>
+            </tr>`).join('');
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+window.updateOrderStatus = async function (id, status) {
+  try {
+    await window.VINOVA_API.orders.updateStatus(id, status);
+    window.showToast('Cập nhật trạng thái thành công', 'success');
+  } catch (err) {
+    window.showToast(err.message, 'error');
+    renderAdminOrders();
+  }
+}
+
+async function renderAdminProducts() {
+  if (typeof window.VINOVA_API === 'undefined') return;
+  try {
+    const data = await window.VINOVA_API.products.list({ limit: 100, sort: 'newest' });
+    const tbody = document.getElementById('admin-products-tbody');
+    if (tbody) {
+      tbody.innerHTML = data.products.map(p => `
+            <tr>
+              <td>#${p.id}</td>
+              <td>${p.name}</td>
+              <td>${p.region || '-'}</td>
+              <td style="color:var(--c-gold-light)">${formatPrice(p.price)}</td>
+              <td style="color:${p.stock <= 5 ? 'var(--c-error)' : 'inherit'};font-weight:600">${p.stock}</td>
+              <td><span class="badge badge--green">Hoạt động</span></td>
+              <td>
+                <button class="btn btn--sm btn--outline" onclick="window.navigate('product-detail', {id: ${p.id}})">Xem</button>
+              </td>
+            </tr>`).join('');
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function renderAdminInventory() {
+  if (typeof window.VINOVA_API === 'undefined') return;
+  try {
+    const data = await window.VINOVA_API.products.list({ limit: 100, sort: 'newest' });
+    const tbody = document.getElementById('admin-inventory-full-tbody');
+    if (tbody) {
+      tbody.innerHTML = data.products.map(p => `
+            <tr>
+              <td>#${p.id}</td>
+              <td>${p.name}</td>
+              <td>${p.type || '-'}</td>
+              <td>${p.region || '-'}</td>
+              <td style="color:${p.stock <= 5 ? 'var(--c-error)' : 'inherit'};font-weight:600">${p.stock}</td>
+            </tr>`).join('');
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function renderAdminCustomers() {
+  if (typeof window.VINOVA_API === 'undefined') return;
+  try {
+    const data = await window.VINOVA_API.admin.users({ limit: 50 });
+    const tbody = document.getElementById('admin-customers-tbody');
+    if (tbody) {
+      tbody.innerHTML = data.users.map(u => `
+            <tr>
+              <td>#${u.id}</td>
+              <td>${u.email}</td>
+              <td>${u.full_name || '-'}</td>
+              <td><span class="badge ${u.role === 'admin' ? 'badge--gold' : 'badge--muted'}">${u.role.toUpperCase()}</span></td>
+              <td>${u.tier ? u.tier.toUpperCase() : '-'}</td>
+              <td>${new Date(u.created_at).toLocaleDateString('vi-VN')}</td>
+            </tr>`).join('');
+    }
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 function renderPromosAdmin() {
@@ -1304,19 +1521,49 @@ window.deletePromo = (idx) => {
   window.showToast('Đã xóa mã khuyến mãi', 'success');
 };
 
-function renderCharts() {
-  const months = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
-  const revenue = [120, 145, 208, 189, 260, 310, 285, 340, 295, 380, 420, 510];
-  const maxVal = Math.max(...revenue);
-  const chart = document.getElementById('revenueChart');
-  if (!chart) return;
-  chart.innerHTML = `<div class="chart-bar-wrap">${months.map((m, i) => `
-    <div class="chart-bar-col">
-      <div class="chart-bar" style="height:${(revenue[i] / maxVal) * 180}px;background:linear-gradient(to top,var(--c-red-wine),var(--c-gold))" title="${revenue[i]}M"></div>
-      <div class="chart-label">${m}</div>
-    </div>`).join('')}</div>`;
-}
+// ─── ADMIN PRODUCT MODAL ────────────────────────────────────────────────
+window.openProductModal = () => document.getElementById('productModal')?.classList.add('open');
+window.closeProductModal = () => document.getElementById('productModal')?.classList.remove('open');
 
+window.submitNewProduct = async () => {
+  const name = document.getElementById('newProductName')?.value.trim();
+  const region = document.getElementById('newProductRegion')?.value.trim();
+  const type = document.getElementById('newProductType')?.value;
+  const grape = document.getElementById('newProductGrape')?.value.trim();
+  const price = parseInt(document.getElementById('newProductPrice')?.value) || 0;
+  const stock = parseInt(document.getElementById('newProductStock')?.value) || 0;
+  const abv = document.getElementById('newProductAbv')?.value.trim();
+  const imgUrl = document.getElementById('newProductImg')?.value.trim();
+  const desc = document.getElementById('newProductDesc')?.value.trim();
+
+  if (!name || !region || !type || !price) {
+    return window.showToast('Vui lòng điền các trường bắt buộc (*)', 'error');
+  }
+
+  const payload = {
+    name, region, type, price, stock,
+    grape: grape || null,
+    abv: abv || null,
+    img: imgUrl || null,
+    description: desc || null
+  };
+
+  try {
+    const res = await window.VINOVA_API.products.create(payload);
+    window.showToast('Thêm sản phẩm thành công!', 'success');
+    window.closeProductModal();
+    // Clear inputs
+    document.querySelectorAll('#productModal input, #productModal textarea').forEach(el => el.value = '');
+    document.getElementById('newProductStock').value = '10'; // reset default
+
+    // Refresh inventory and dashboard if we are actively viewing it
+    if (typeof renderAdminInventory === 'function') renderAdminInventory();
+  } catch (err) {
+    window.showToast(err.message, 'error');
+  }
+};
+
+// Charts logic embedded inside `renderAdminDashboard`
 // ─── WINE CLUB ────────────────────────────────────────────────
 function renderWineClub() { /* static content */ }
 
@@ -1397,29 +1644,5 @@ document.addEventListener('DOMContentLoaded', () => {
   const hash = window.location.hash.replace('#', '') || 'home';
   navigate(['home', 'products', 'cart', 'checkout', 'account', 'wine-club', 'admin', 'product-detail'].includes(hash) ? hash : 'home');
   console.log('%cVINOVA Premium Wine & Spirits', 'color:#c9a84c;font-size:1.2rem;font-weight:bold');
-
-  // Custom Login Flow bindings for Vinova API
-  document.getElementById('loginBtn')?.addEventListener('click', async () => {
-    const email = document.getElementById('loginEmail')?.value;
-    const pass = document.getElementById('loginPass')?.value;
-    if (!email || !pass) return showToast('Vui lòng nhập email và mật khẩu', 'error');
-    if (typeof window.VINOVA_API !== 'undefined') {
-      try {
-        const res = await window.VINOVA_API.users.login(email, pass);
-        window.dispatchEvent(new CustomEvent('auth:login', { detail: res.user }));
-        window.closeLoginModal?.();
-        showToast('Đăng nhập thành công!', 'success');
-      } catch (err) {
-        showToast(err.message || 'Lỗi đăng nhập', 'error');
-      }
-    } else {
-      // Fallback local login
-      const isAdmin = email.toLowerCase() === 'admin';
-      const mockUser = { id: 1, email, full_name: isAdmin ? 'Admin VINOVA' : email.split('@')[0], tier: 'gold', points: 4850, role: isAdmin ? 'admin' : 'customer' };
-      window.dispatchEvent(new CustomEvent('auth:login', { detail: mockUser }));
-      window.closeLoginModal?.();
-      showToast(isAdmin ? 'Đăng nhập (Demo) Admin thành công!' : 'Đăng nhập (Demo) thành công!', 'success');
-    }
-  });
 });
 
