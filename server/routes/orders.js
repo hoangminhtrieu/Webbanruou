@@ -14,14 +14,16 @@ router.post('/', optionalAuth, (req, res) => {
     let orderItems = [];
 
     if (req.user) {
-        // Logged in: get from server cart
+        // Logged in: try server cart first
         orderItems = db.prepare(`
       SELECT c.qty, p.id as product_id, p.name, p.price, p.img, p.volume, p.stock
       FROM cart_items c JOIN products p ON c.product_id = p.id
       WHERE c.user_id = ? AND p.is_active = 1
     `).all(req.user.id);
-    } else if (items?.length) {
-        // Guest: items passed in body
+    }
+
+    // Fallback: use items from request body (for both logged-in and guest users)
+    if (!orderItems.length && items?.length) {
         orderItems = items.map(i => {
             const p = db.prepare('SELECT id, name, price, img, volume, stock FROM products WHERE id = ? AND is_active = 1').get(i.product_id);
             return p ? { ...p, product_id: p.id, qty: Math.min(i.qty, p.stock) } : null;
@@ -80,6 +82,21 @@ router.get('/', authMiddleware, (req, res) => {
     res.json({ orders });
 });
 
+// GET /api/orders/admin/all — Admin list all orders
+// ⚠️ MUST be before /:id to prevent Express from matching 'admin' as :id
+router.get('/admin/all', authMiddleware, adminMiddleware, (req, res) => {
+    const db = getDB();
+    const { status, page = 1, limit = 20 } = req.query;
+    let sql = 'SELECT o.*, u.full_name, u.email FROM orders o LEFT JOIN users u ON o.user_id = u.id';
+    const params = [];
+    if (status) { sql += ' WHERE o.status = ?'; params.push(status); }
+    sql += ' ORDER BY o.created_at DESC';
+    const total = db.prepare(sql.replace('SELECT o.*, u.full_name, u.email', 'SELECT COUNT(*) as count')).get(...params)?.count || 0;
+    const offset = (page - 1) * limit;
+    const orders = db.prepare(sql + ' LIMIT ? OFFSET ?').all(...params, +limit, offset);
+    res.json({ orders, total, page: +page, limit: +limit });
+});
+
 // GET /api/orders/:id
 router.get('/:id', authMiddleware, (req, res) => {
     const db = getDB();
@@ -102,20 +119,6 @@ router.put('/:id/status', authMiddleware, adminMiddleware, (req, res) => {
     const db = getDB();
     db.prepare('UPDATE orders SET status = ?, updated_at = datetime("now") WHERE id = ?').run(status, req.params.id);
     res.json({ message: `Đơn hàng chuyển sang: ${status}` });
-});
-
-// GET /api/orders/admin/all — Admin list all orders
-router.get('/admin/all', authMiddleware, adminMiddleware, (req, res) => {
-    const db = getDB();
-    const { status, page = 1, limit = 20 } = req.query;
-    let sql = 'SELECT o.*, u.full_name, u.email FROM orders o LEFT JOIN users u ON o.user_id = u.id';
-    const params = [];
-    if (status) { sql += ' WHERE o.status = ?'; params.push(status); }
-    sql += ' ORDER BY o.created_at DESC';
-    const total = db.prepare(sql.replace('SELECT o.*, u.full_name, u.email', 'SELECT COUNT(*) as count')).get(...params)?.count || 0;
-    const offset = (page - 1) * limit;
-    const orders = db.prepare(sql + ' LIMIT ? OFFSET ?').all(...params, +limit, offset);
-    res.json({ orders, total, page: +page, limit: +limit });
 });
 
 module.exports = router;
