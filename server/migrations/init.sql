@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS users (
 -- Products
 CREATE TABLE IF NOT EXISTS products (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,
-  name          TEXT    NOT NULL,
+  name          TEXT    NOT NULL UNIQUE,
   region        TEXT    NOT NULL,
   subregion     TEXT,
   type          TEXT    NOT NULL,  -- red|white|sparkling|whisky|rose
@@ -58,6 +58,7 @@ CREATE TABLE IF NOT EXISTS orders (
   shipping_fee    INTEGER NOT NULL DEFAULT 50000,
   tax             INTEGER NOT NULL DEFAULT 0,
   gift_wrap       INTEGER NOT NULL DEFAULT 0,
+  points_earned   INTEGER NOT NULL DEFAULT 0, -- Points awarded for this order
   gift_message    TEXT,
   adult_signature INTEGER NOT NULL DEFAULT 1,
   payment_method  TEXT,  -- vnpay|momo|stripe|cod

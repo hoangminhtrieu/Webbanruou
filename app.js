@@ -2,468 +2,897 @@
    VINOVA — Main Application JavaScript
    ============================================================ */
 
-const state = {
-  cart: JSON.parse(localStorage.getItem('vinova_cart') || '[]'),
-  wishlist: JSON.parse(localStorage.getItem('vinova_wishlist') || '[]'),
-  currency: localStorage.getItem('vinova_currency') || 'VND',
-  lang: localStorage.getItem('vinova_lang') || 'vi',
-  ageVerified: localStorage.getItem('vinova_age') === 'true',
-  user: JSON.parse(localStorage.getItem('vinova_user') || 'null'),
-  promos: JSON.parse(localStorage.getItem('vinova_promos') || '[{"code":"VINOVA10","discount":10,"active":true}]'),
-  filters: { types: [], regions: [], grapes: [], priceMin: 0, priceMax: 50000000, abvMin: 0, abvMax: 60, ratings: [] },
-  page: 'home',
+window.state = {
+  cart: JSON.parse(localStorage.getItem("vinova_cart") || "[]"),
+  wishlist: JSON.parse(localStorage.getItem("vinova_wishlist") || "[]"),
+  currency: localStorage.getItem("vinova_currency") || "VND",
+  lang: localStorage.getItem("vinova_lang") || "vi",
+  ageVerified: localStorage.getItem("vinova_age") === "true",
+  user: JSON.parse(localStorage.getItem("vinova_user") || "null"),
+  promos: JSON.parse(
+    localStorage.getItem("vinova_promos") ||
+      '[{"code":"VINOVA10","discount":10,"active":true}]',
+  ),
+  filters: {
+    types: [],
+    regions: [],
+    grapes: [],
+    priceMin: 0,
+    priceMax: 50000000,
+    abvMin: 0,
+    abvMax: 60,
+    ratings: [],
+  },
+  page: "home",
   checkoutStep: 1,
+  appliedPromo: null,
+  adminOrderFilter: "",
 };
+const state = window.state;
 
 // ─── INIT AUTH ────────────────────────────────────────────────
 function initAuthUI() {
-  const btn = document.getElementById('headerAuthBtn');
-  const adminLink = document.getElementById('navAdminLink');
+  const btn = document.getElementById("headerAuthBtn");
+  const adminLink = document.getElementById("navAdminLink");
 
   // Show admin link if user role is admin
   if (adminLink) {
-    console.log('[Auth] Check admin role:', state.user?.role);
-    if (state.user && state.user.role === 'admin') {
-      adminLink.setAttribute('style', 'display: block !important');
+    if (state.user && state.user.role === "admin") {
+      adminLink.setAttribute("style", "display: block !important");
     } else {
-      adminLink.setAttribute('style', 'display: none !important');
+      adminLink.setAttribute("style", "display: none !important");
       // If currently on admin page and not admin, redirect to home
-      if (state.page === 'admin') navigate('home');
+      if (state.page === "admin") navigate("home");
     }
   }
 
   if (!btn) return;
   if (state.user) {
-    btn.textContent = state.user.full_name || 'Tài khoản';
-    btn.classList.replace('btn--outline', 'btn--ghost');
-    btn.onclick = () => navigate('account');
+    btn.textContent = state.user.full_name || "Tài khoản";
+    btn.classList.replace("btn--outline", "btn--ghost");
+    btn.onclick = () => navigate("account");
   } else {
-    btn.textContent = 'Đăng nhập';
-    btn.classList.replace('btn--ghost', 'btn--outline');
-    btn.onclick = window.openLoginModal || (() => { });
+    btn.textContent = "Đăng nhập";
+    btn.classList.replace("btn--ghost", "btn--outline");
+    btn.onclick = window.openLoginModal || (() => {});
   }
 }
 
-window.addEventListener('auth:login', (e) => {
+window.addEventListener("auth:login", (e) => {
   state.user = e.detail;
-  localStorage.setItem('vinova_user', JSON.stringify(state.user));
+  localStorage.setItem("vinova_user", JSON.stringify(state.user));
   initAuthUI();
-  if (state.page === 'account') renderAccount();
+  if (state.page === "account") renderAccount();
 });
 
-window.addEventListener('auth:logout', () => {
+window.addEventListener("auth:logout", () => {
   state.user = null;
-  localStorage.removeItem('vinova_user');
-  localStorage.removeItem('vinova_token');
+  localStorage.removeItem("vinova_user");
+  localStorage.removeItem("vinova_token");
   initAuthUI();
-  if (state.page === 'account') renderAccount();
-  showToast('Đã đăng xuất thành công', 'info');
+  if (state.page === "account") renderAccount();
+  showToast("Đã đăng xuất thành công", "info");
 });
 
 // ─── PRODUCTS DATABASE ────────────────────────────────────────
 const PRODUCTS = [
   {
-    id: 1, name: "Château Lafite Rothschild", vintage: 2018,
-    region: "Pháp", subregion: "Bordeaux", type: "red",
-    grape: "Cabernet Sauvignon", abv: 13.5, volume: "750ml",
-    price: 18500000, oldPrice: 21000000,
-    score: 98, rating: 4.9, reviews: 234,
+    id: 1,
+    name: "Château Lafite Rothschild",
+    vintage: 2018,
+    region: "Pháp",
+    subregion: "Bordeaux",
+    type: "red",
+    grape: "Cabernet Sauvignon",
+    abv: 13.5,
+    volume: "750ml",
+    price: 18500000,
+    oldPrice: 21000000,
+    score: 98,
+    rating: 4.9,
+    reviews: 234,
     badge: "Best Seller",
     img: "images/red_wine_bottle.jpg",
-    tasting: { color: "Đỏ rubis sâu", nose: "Cassis, hương gỗ sồi, hoa violets", palate: "Tannic mịn, thanh lịch, phức hợp", finish: "Dài >90 giây" },
+    tasting: {
+      color: "Đỏ rubis sâu",
+      nose: "Cassis, hương gỗ sồi, hoa violets",
+      palate: "Tannic mịn, thanh lịch, phức hợp",
+      finish: "Dài >90 giây",
+    },
     food: ["Bò bít tết", "Thịt cừu nướng", "Pho mát cứng"],
     tags: ["premium", "collection", "gift"],
     stock: 12,
   },
   {
-    id: 2, name: "Domaine de la Romanée-Conti", vintage: 2017,
-    region: "Pháp", subregion: "Burgundy", type: "red",
-    grape: "Pinot Noir", abv: 13.0, volume: "750ml",
-    price: 95000000, oldPrice: null,
-    score: 100, rating: 5.0, reviews: 48,
+    id: 2,
+    name: "Domaine de la Romanée-Conti",
+    vintage: 2017,
+    region: "Pháp",
+    subregion: "Burgundy",
+    type: "red",
+    grape: "Pinot Noir",
+    abv: 13.0,
+    volume: "750ml",
+    price: 95000000,
+    oldPrice: null,
+    score: 100,
+    rating: 5.0,
+    reviews: 48,
     badge: "Hiếm",
     img: "images/red_wine_bottle.jpg",
-    tasting: { color: "Đỏ garnet trong suốt", nose: "Cherry đỏ, hoa hồng, đất quý", palate: "Tinh tế, phức hợp phi thường", finish: ">2 phút" },
+    tasting: {
+      color: "Đỏ garnet trong suốt",
+      nose: "Cherry đỏ, hoa hồng, đất quý",
+      palate: "Tinh tế, phức hợp phi thường",
+      finish: ">2 phút",
+    },
     food: ["Phô mai Comté", "Nấm truffle", "Cá hồi hun khói"],
     tags: ["luxury", "rare", "collection"],
     stock: 3,
   },
   {
-    id: 3, name: "Opus One Reserve", vintage: 2019,
-    region: "Mỹ", subregion: "Napa Valley", type: "red",
-    grape: "Cabernet Sauvignon blend", abv: 14.5, volume: "750ml",
-    price: 12800000, oldPrice: 14500000,
-    score: 96, rating: 4.8, reviews: 187,
+    id: 3,
+    name: "Opus One Reserve",
+    vintage: 2019,
+    region: "Mỹ",
+    subregion: "Napa Valley",
+    type: "red",
+    grape: "Cabernet Sauvignon blend",
+    abv: 14.5,
+    volume: "750ml",
+    price: 12800000,
+    oldPrice: 14500000,
+    score: 96,
+    rating: 4.8,
+    reviews: 187,
     badge: "Mới về",
     img: "images/red_wine_bottle.jpg",
-    tasting: { color: "Đỏ tím đậm", nose: "Mứt mận, chocolate đen, vanilla", palate: "Dày dặn, mượt mà", finish: "Dài ấm áp" },
+    tasting: {
+      color: "Đỏ tím đậm",
+      nose: "Mứt mận, chocolate đen, vanilla",
+      palate: "Dày dặn, mượt mà",
+      finish: "Dài ấm áp",
+    },
     food: ["Sườn bò nướng BBQ", "Xốt nấm rừng", "Phô mai cheddar"],
     tags: ["premium", "new"],
     stock: 24,
   },
   {
-    id: 4, name: "Dom Pérignon Vintage", vintage: 2013,
-    region: "Pháp", subregion: "Champagne", type: "sparkling",
-    grape: "Chardonnay / Pinot Noir", abv: 12.5, volume: "750ml",
-    price: 7200000, oldPrice: 8500000,
-    score: 97, rating: 4.9, reviews: 312,
+    id: 4,
+    name: "Dom Pérignon Vintage",
+    vintage: 2013,
+    region: "Pháp",
+    subregion: "Champagne",
+    type: "sparkling",
+    grape: "Chardonnay / Pinot Noir",
+    abv: 12.5,
+    volume: "750ml",
+    price: 7200000,
+    oldPrice: 8500000,
+    score: 97,
+    rating: 4.9,
+    reviews: 312,
     badge: "Sale 15%",
     img: "images/champagne_bottle.jpg",
-    tasting: { color: "Vàng rơm óng ánh", nose: "Bánh mì nướng, chanh vàng, acacia", palate: "Sủi bọt mịn, tinh tế", finish: "Tươi mát dài" },
+    tasting: {
+      color: "Vàng rơm óng ánh",
+      nose: "Bánh mì nướng, chanh vàng, acacia",
+      palate: "Sủi bọt mịn, tinh tế",
+      finish: "Tươi mát dài",
+    },
     food: ["Hải sản tươi", "Oyster", "Caviar", "Sashimi"],
     tags: ["champagne", "gift", "celebration"],
     stock: 36,
   },
   {
-    id: 5, name: "Macallan 25 Year Sherry Oak", vintage: null,
-    region: "Scotland", subregion: "Speyside", type: "whisky",
-    grape: null, abv: 43.0, volume: "700ml",
-    price: 52000000, oldPrice: null,
-    score: 95, rating: 4.9, reviews: 89,
+    id: 5,
+    name: "Macallan 25 Year Sherry Oak",
+    vintage: null,
+    region: "Scotland",
+    subregion: "Speyside",
+    type: "whisky",
+    grape: null,
+    abv: 43.0,
+    volume: "700ml",
+    price: 52000000,
+    oldPrice: null,
+    score: 95,
+    rating: 4.9,
+    reviews: 89,
     badge: "Siêu hiếm",
     img: "images/whisky_bottle.jpg",
-    tasting: { color: "Amber vàng tươi", nose: "Sherry ngọt, vanilla, gừng", palate: "Mịn như nhung, phong phú", finish: "Rất dài ấm áp" },
+    tasting: {
+      color: "Amber vàng tươi",
+      nose: "Sherry ngọt, vanilla, gừng",
+      palate: "Mịn như nhung, phong phú",
+      finish: "Rất dài ấm áp",
+    },
     food: ["Chocolate đen", "Cigar Cuba", "Phô mai cứng"],
     tags: ["whisky", "luxury", "rare"],
     stock: 5,
   },
   {
-    id: 6, name: "Sassicaia 2020", vintage: 2020,
-    region: "Ý", subregion: "Bolgheri", type: "red",
-    grape: "Cabernet Sauvignon", abv: 13.5, volume: "750ml",
-    price: 6800000, oldPrice: 7500000,
-    score: 94, rating: 4.7, reviews: 156,
+    id: 6,
+    name: "Sassicaia 2020",
+    vintage: 2020,
+    region: "Ý",
+    subregion: "Bolgheri",
+    type: "red",
+    grape: "Cabernet Sauvignon",
+    abv: 13.5,
+    volume: "750ml",
+    price: 6800000,
+    oldPrice: 7500000,
+    score: 94,
+    rating: 4.7,
+    reviews: 156,
     badge: null,
     img: "images/red_wine_bottle.jpg",
-    tasting: { color: "Đỏ rubis đậm", nose: "Blackberry, ceder, herbs Địa Trung Hải", palate: "Đậm đà, cấu trúc tốt", finish: "Dài và nhất quán" },
+    tasting: {
+      color: "Đỏ rubis đậm",
+      nose: "Blackberry, ceder, herbs Địa Trung Hải",
+      palate: "Đậm đà, cấu trúc tốt",
+      finish: "Dài và nhất quán",
+    },
     food: ["Pasta thịt bò", "Pizza thịt nguội", "Cá ngừ tươi"],
     tags: ["italian", "premium"],
     stock: 30,
   },
   {
-    id: 7, name: "Cloudy Bay Sauvignon Blanc", vintage: 2022,
-    region: "New Zealand", subregion: "Marlborough", type: "white",
-    grape: "Sauvignon Blanc", abv: 13.0, volume: "750ml",
-    price: 850000, oldPrice: 1000000,
-    score: 91, rating: 4.5, reviews: 428,
+    id: 7,
+    name: "Cloudy Bay Sauvignon Blanc",
+    vintage: 2022,
+    region: "New Zealand",
+    subregion: "Marlborough",
+    type: "white",
+    grape: "Sauvignon Blanc",
+    abv: 13.0,
+    volume: "750ml",
+    price: 850000,
+    oldPrice: 1000000,
+    score: 91,
+    rating: 4.5,
+    reviews: 428,
     badge: "Bán chạy",
     img: "images/white_wine_bottle.jpg",
-    tasting: { color: "Vàng nhạt trong suốt", nose: "Chanh dây, lý chua, cỏ mới cắt", palate: "Sắc sảo, tươi mát", finish: "Thanh và sạch" },
+    tasting: {
+      color: "Vàng nhạt trong suốt",
+      nose: "Chanh dây, lý chua, cỏ mới cắt",
+      palate: "Sắc sảo, tươi mát",
+      finish: "Thanh và sạch",
+    },
     food: ["Gỏi hải sản", "Sushi", "Salad rau thơm"],
     tags: ["white", "everyday"],
     stock: 120,
   },
   {
-    id: 8, name: "Concha y Toro Don Melchor", vintage: 2020,
-    region: "Chile", subregion: "Puente Alto", type: "red",
-    grape: "Cabernet Sauvignon", abv: 14.5, volume: "750ml",
-    price: 2200000, oldPrice: 2800000,
-    score: 93, rating: 4.6, reviews: 203,
+    id: 8,
+    name: "Concha y Toro Don Melchor",
+    vintage: 2020,
+    region: "Chile",
+    subregion: "Puente Alto",
+    type: "red",
+    grape: "Cabernet Sauvignon",
+    abv: 14.5,
+    volume: "750ml",
+    price: 2200000,
+    oldPrice: 2800000,
+    score: 93,
+    rating: 4.6,
+    reviews: 203,
     badge: "Combo tiết kiệm",
     img: "images/red_wine_bottle.jpg",
-    tasting: { color: "Đỏ tím thẫm", nose: "Cassis chín, café espresso, hương gỗ", palate: "Đầy đặn, cân bằng xuất sắc", finish: "Dài và tinh tế" },
+    tasting: {
+      color: "Đỏ tím thẫm",
+      nose: "Cassis chín, café espresso, hương gỗ",
+      palate: "Đầy đặn, cân bằng xuất sắc",
+      finish: "Dài và tinh tế",
+    },
     food: ["Bò wagyu", "Lamb chop", "Dark chocolate"],
     tags: ["value", "south-america"],
     stock: 58,
   },
   {
-    id: 9, name: "Penfolds Grange", vintage: 2018,
-    region: "Úc", subregion: "South Australia", type: "red",
-    grape: "Shiraz", abv: 14.5, volume: "750ml",
-    price: 9500000, oldPrice: 11000000,
-    score: 97, rating: 4.8, reviews: 143,
+    id: 9,
+    name: "Penfolds Grange",
+    vintage: 2018,
+    region: "Úc",
+    subregion: "South Australia",
+    type: "red",
+    grape: "Shiraz",
+    abv: 14.5,
+    volume: "750ml",
+    price: 9500000,
+    oldPrice: 11000000,
+    score: 97,
+    rating: 4.8,
+    reviews: 143,
     badge: "Iconic",
     img: "images/red_wine_bottle.jpg",
-    tasting: { color: "Đỏ tím sậm", nose: "Mận chín, chocolate, hương hồi và gỗ sồi", palate: "Đậm đà, hùng hậu, tanin rất mịn", finish: "Cực dài, ấm áp" },
+    tasting: {
+      color: "Đỏ tím sậm",
+      nose: "Mận chín, chocolate, hương hồi và gỗ sồi",
+      palate: "Đậm đà, hùng hậu, tanin rất mịn",
+      finish: "Cực dài, ấm áp",
+    },
     food: ["Kangaroo steak", "Bò nướng BBQ", "Phô mai xanh"],
     tags: ["australian", "premium", "iconic"],
     stock: 18,
   },
   {
-    id: 10, name: "Vega Sicilia Único", vintage: 2012,
-    region: "Tây Ban Nha", subregion: "Ribera del Duero", type: "red",
-    grape: "Tempranillo / Cabernet", abv: 14.0, volume: "750ml",
-    price: 14500000, oldPrice: null,
-    score: 98, rating: 4.9, reviews: 67,
+    id: 10,
+    name: "Vega Sicilia Único",
+    vintage: 2012,
+    region: "Tây Ban Nha",
+    subregion: "Ribera del Duero",
+    type: "red",
+    grape: "Tempranillo / Cabernet",
+    abv: 14.0,
+    volume: "750ml",
+    price: 14500000,
+    oldPrice: null,
+    score: 98,
+    rating: 4.9,
+    reviews: 67,
     badge: "Hiếm có",
     img: "images/red_wine_bottle.jpg",
-    tasting: { color: "Đỏ garnet già", nose: "Cherry đen, da thuộc, hương thảo mộc Tây Ban Nha", palate: "Tinh tế, cân bằng hoàn hảo, đa tầng", finish: "Kéo dài vô tận" },
+    tasting: {
+      color: "Đỏ garnet già",
+      nose: "Cherry đen, da thuộc, hương thảo mộc Tây Ban Nha",
+      palate: "Tinh tế, cân bằng hoàn hảo, đa tầng",
+      finish: "Kéo dài vô tận",
+    },
     food: ["Jamón ibérico", "Chorizo", "Thịt cừu quay"],
     tags: ["spanish", "luxury", "rare"],
     stock: 6,
   },
   {
-    id: 11, name: "Moët & Chandon Ice Impérial", vintage: null,
-    region: "Pháp", subregion: "Champagne", type: "sparkling",
-    grape: "Pinot Noir / Chardonnay / Meunier", abv: 12.0, volume: "750ml",
-    price: 2200000, oldPrice: 2600000,
-    score: 90, rating: 4.5, reviews: 521,
+    id: 11,
+    name: "Moët & Chandon Ice Impérial",
+    vintage: null,
+    region: "Pháp",
+    subregion: "Champagne",
+    type: "sparkling",
+    grape: "Pinot Noir / Chardonnay / Meunier",
+    abv: 12.0,
+    volume: "750ml",
+    price: 2200000,
+    oldPrice: 2600000,
+    score: 90,
+    rating: 4.5,
+    reviews: 521,
     badge: "Sale 15%",
     img: "images/champagne_bottle.jpg",
-    tasting: { color: "Vàng nhạt với bọt nhỏ li ti", nose: "Đào, lê, hoa nhài", palate: "Ngọt mát, sủi bọt dịu, tươi trẻ", finish: "Thanh mát, dứt khoát" },
+    tasting: {
+      color: "Vàng nhạt với bọt nhỏ li ti",
+      nose: "Đào, lê, hoa nhài",
+      palate: "Ngọt mát, sủi bọt dịu, tươi trẻ",
+      finish: "Thanh mát, dứt khoát",
+    },
     food: ["Đá bào trái cây", "Mousse chanh", "Cocktail party"],
     tags: ["champagne", "party", "gift"],
     stock: 80,
   },
   {
-    id: 12, name: "Johnnie Walker Blue Label", vintage: null,
-    region: "Scotland", subregion: "Blended", type: "whisky",
-    grape: null, abv: 40.0, volume: "750ml",
-    price: 5200000, oldPrice: 5800000,
-    score: 92, rating: 4.7, reviews: 388,
+    id: 12,
+    name: "Johnnie Walker Blue Label",
+    vintage: null,
+    region: "Scotland",
+    subregion: "Blended",
+    type: "whisky",
+    grape: null,
+    abv: 40.0,
+    volume: "750ml",
+    price: 5200000,
+    oldPrice: 5800000,
+    score: 92,
+    rating: 4.7,
+    reviews: 388,
     badge: "Quà tặng",
     img: "images/whisky_bottle.jpg",
-    tasting: { color: "琥珀 vàng sâu", nose: "Honey, vanilla, trái cây sấy khô", palate: "Mượt mà, phong phú, vị khói nhẹ", finish: "Ấm áp, dài" },
+    tasting: {
+      color: "琥珀 vàng sâu",
+      nose: "Honey, vanilla, trái cây sấy khô",
+      palate: "Mượt mà, phong phú, vị khói nhẹ",
+      finish: "Ấm áp, dài",
+    },
     food: ["Cigar", "Chocolate trắng", "Cá hồi xông khói"],
     tags: ["whisky", "gift", "blended"],
     stock: 45,
   },
   {
-    id: 13, name: "Whispering Angel Rosé", vintage: 2022,
-    region: "Pháp", subregion: "Provence", type: "rosé",
-    grape: "Grenache / Cinsault / Rolle", abv: 13.0, volume: "750ml",
-    price: 1450000, oldPrice: 1700000,
-    score: 91, rating: 4.6, reviews: 276,
+    id: 13,
+    name: "Whispering Angel Rosé",
+    vintage: 2022,
+    region: "Pháp",
+    subregion: "Provence",
+    type: "rosé",
+    grape: "Grenache / Cinsault / Rolle",
+    abv: 13.0,
+    volume: "750ml",
+    price: 1450000,
+    oldPrice: 1700000,
+    score: 91,
+    rating: 4.6,
+    reviews: 276,
     badge: "Mùa hè",
     img: "images/rose_wine_bottle.jpg",
-    tasting: { color: "Hồng phấn nhạt, trong suốt", nose: "Dâu tây, đào trắng, hoa hồng", palate: "Tươi, nhẹ nhàng, cân bằng tuyệt vời", finish: "Sạch, dứt khoát" },
+    tasting: {
+      color: "Hồng phấn nhạt, trong suốt",
+      nose: "Dâu tây, đào trắng, hoa hồng",
+      palate: "Tươi, nhẹ nhàng, cân bằng tuyệt vời",
+      finish: "Sạch, dứt khoát",
+    },
     food: ["Salad Niçoise", "Tôm nướng", "Phô mai dê"],
     tags: ["rosé", "summer", "provence"],
     stock: 65,
   },
   {
-    id: 14, name: "Remy Martin XO", vintage: null,
-    region: "Pháp", subregion: "Cognac", type: "brandy",
-    grape: null, abv: 40.0, volume: "700ml",
-    price: 4800000, oldPrice: 5500000,
-    score: 94, rating: 4.8, reviews: 192,
+    id: 14,
+    name: "Remy Martin XO",
+    vintage: null,
+    region: "Pháp",
+    subregion: "Cognac",
+    type: "brandy",
+    grape: null,
+    abv: 40.0,
+    volume: "700ml",
+    price: 4800000,
+    oldPrice: 5500000,
+    score: 94,
+    rating: 4.8,
+    reviews: 192,
     badge: "Sang trọng",
     img: "images/cognac_bottle.jpg",
-    tasting: { color: "Amber đỏ sâu", nose: "Mận khô, cam quýt, hoa jasmine, hương gỗ", palate: "Mượt, ấm, vị trái cây chín và gia vị", finish: "Rất dài, hoa quả và gỗ" },
+    tasting: {
+      color: "Amber đỏ sâu",
+      nose: "Mận khô, cam quýt, hoa jasmine, hương gỗ",
+      palate: "Mượt, ấm, vị trái cây chín và gia vị",
+      finish: "Rất dài, hoa quả và gỗ",
+    },
     food: ["Foie gras", "Phô mai brie", "Socola truffle"],
     tags: ["cognac", "brandy", "luxury", "gift"],
     stock: 22,
   },
   {
-    id: 15, name: "Gaja Barbaresco", vintage: 2019,
-    region: "Ý", subregion: "Piedmont", type: "red",
-    grape: "Nebbiolo", abv: 14.0, volume: "750ml",
-    price: 7800000, oldPrice: null,
-    score: 96, rating: 4.8, reviews: 109,
+    id: 15,
+    name: "Gaja Barbaresco",
+    vintage: 2019,
+    region: "Ý",
+    subregion: "Piedmont",
+    type: "red",
+    grape: "Nebbiolo",
+    abv: 14.0,
+    volume: "750ml",
+    price: 7800000,
+    oldPrice: null,
+    score: 96,
+    rating: 4.8,
+    reviews: 109,
     badge: "Cổ điển",
     img: "images/red_wine_bottle.jpg",
-    tasting: { color: "Đỏ garnet với viền cam", nose: "Hoa hồng khô, cherry dại, nhựa trắng", palate: "Đậm đà nhưng tinh tế, tanin mạnh mẽ", finish: "Dài với hương hoa và đất" },
+    tasting: {
+      color: "Đỏ garnet với viền cam",
+      nose: "Hoa hồng khô, cherry dại, nhựa trắng",
+      palate: "Đậm đà nhưng tinh tế, tanin mạnh mẽ",
+      finish: "Dài với hương hoa và đất",
+    },
     food: ["Risotto nấm truffle", "Thịt bò hầm Barolo", "Phô mai Parmesan"],
     tags: ["italian", "premium", "nebbiolo"],
     stock: 14,
   },
   {
-    id: 16, name: "Egon Müller Scharzhofberger Riesling TBA", vintage: 2020,
-    region: "Đức", subregion: "Mosel", type: "white",
-    grape: "Riesling", abv: 7.0, volume: "375ml",
-    price: 22000000, oldPrice: null,
-    score: 100, rating: 5.0, reviews: 23,
+    id: 16,
+    name: "Egon Müller Scharzhofberger Riesling TBA",
+    vintage: 2020,
+    region: "Đức",
+    subregion: "Mosel",
+    type: "white",
+    grape: "Riesling",
+    abv: 7.0,
+    volume: "375ml",
+    price: 22000000,
+    oldPrice: null,
+    score: 100,
+    rating: 5.0,
+    reviews: 23,
     badge: "Quý hiếm",
     img: "images/white_wine_bottle.jpg",
-    tasting: { color: "Vàng mật ong óng ánh", nose: "Mật ong, mơ sấy, cam quýt, khoáng chất", palate: "Cực ngọt nhưng tươi, cân bằng siêu việt", finish: "Vĩnh cửu, hơn 3 phút" },
+    tasting: {
+      color: "Vàng mật ong óng ánh",
+      nose: "Mật ong, mơ sấy, cam quýt, khoáng chất",
+      palate: "Cực ngọt nhưng tươi, cân bằng siêu việt",
+      finish: "Vĩnh cửu, hơn 3 phút",
+    },
     food: ["Foie gras", "Roquefort", "Bánh flan caramel"],
     tags: ["germany", "dessert", "luxury", "rare"],
     stock: 4,
   },
   {
-    id: 17, name: "Screaming Eagle Cabernet", vintage: 2016,
-    region: "Mỹ", subregion: "Napa Valley", type: "red",
-    grape: "Cabernet Sauvignon", abv: 14.5, volume: "750ml",
-    price: 75000000, oldPrice: null,
-    score: 99, rating: 5.0, reviews: 31,
+    id: 17,
+    name: "Screaming Eagle Cabernet",
+    vintage: 2016,
+    region: "Mỹ",
+    subregion: "Napa Valley",
+    type: "red",
+    grape: "Cabernet Sauvignon",
+    abv: 14.5,
+    volume: "750ml",
+    price: 75000000,
+    oldPrice: null,
+    score: 99,
+    rating: 5.0,
+    reviews: 31,
     badge: "Huyền thoại",
     img: "images/red_wine_bottle.jpg",
-    tasting: { color: "Đỏ tím sậm huyền bí", nose: "Cassis, mận đen, graphite, hương hoa violet", palate: "Hoàn hảo, phức hợp vô song, tanin như nhung", finish: "Bất tận, tinh khiết" },
+    tasting: {
+      color: "Đỏ tím sậm huyền bí",
+      nose: "Cassis, mận đen, graphite, hương hoa violet",
+      palate: "Hoàn hảo, phức hợp vô song, tanin như nhung",
+      finish: "Bất tận, tinh khiết",
+    },
     food: ["A5 Wagyu", "Lobster bisque", "Phô mai Époisses"],
     tags: ["usa", "luxury", "cult", "rare"],
     stock: 2,
   },
   {
-    id: 18, name: "Torres Gran Coronas", vintage: 2020,
-    region: "Tây Ban Nha", subregion: "Penedès", type: "red",
-    grape: "Cabernet Sauvignon / Tempranillo", abv: 13.5, volume: "750ml",
-    price: 650000, oldPrice: 800000,
-    score: 89, rating: 4.4, reviews: 364,
+    id: 18,
+    name: "Torres Gran Coronas",
+    vintage: 2020,
+    region: "Tây Ban Nha",
+    subregion: "Penedès",
+    type: "red",
+    grape: "Cabernet Sauvignon / Tempranillo",
+    abv: 13.5,
+    volume: "750ml",
+    price: 650000,
+    oldPrice: 800000,
+    score: 89,
+    rating: 4.4,
+    reviews: 364,
     badge: "Tiết kiệm",
     img: "images/red_wine_bottle.jpg",
-    tasting: { color: "Đỏ cherry tươi sáng", nose: "Cherry, plum, hương thảo mộc", palate: "Trung bình, tươi, dễ uống", finish: "Vừa phải, trái cây" },
+    tasting: {
+      color: "Đỏ cherry tươi sáng",
+      nose: "Cherry, plum, hương thảo mộc",
+      palate: "Trung bình, tươi, dễ uống",
+      finish: "Vừa phải, trái cây",
+    },
     food: ["Tapas", "Pizza", "Thịt nướng thông thường"],
     tags: ["spanish", "everyday", "value"],
     stock: 200,
   },
   {
-    id: 19, name: "Cloudy Bay Te Koko", vintage: 2020,
-    region: "New Zealand", subregion: "Marlborough", type: "white",
-    grape: "Sauvignon Blanc", abv: 14.0, volume: "750ml",
-    price: 1850000, oldPrice: 2200000,
-    score: 93, rating: 4.7, reviews: 148,
+    id: 19,
+    name: "Cloudy Bay Te Koko",
+    vintage: 2020,
+    region: "New Zealand",
+    subregion: "Marlborough",
+    type: "white",
+    grape: "Sauvignon Blanc",
+    abv: 14.0,
+    volume: "750ml",
+    price: 1850000,
+    oldPrice: 2200000,
+    score: 93,
+    rating: 4.7,
+    reviews: 148,
     badge: "Đặc biệt",
     img: "images/white_wine_bottle.jpg",
-    tasting: { color: "Vàng rơm đậm", nose: "Bơ, đào vàng, vanilla, hương sồi tinh tế", palate: "Phong phú, béo ngậy, phức hợp", finish: "Dài và mượt mà" },
+    tasting: {
+      color: "Vàng rơm đậm",
+      nose: "Bơ, đào vàng, vanilla, hương sồi tinh tế",
+      palate: "Phong phú, béo ngậy, phức hợp",
+      finish: "Dài và mượt mà",
+    },
     food: ["Bơ tôm hùm", "Gà quay kem nấm", "Pasta carbonara"],
     tags: ["white", "oaked", "premium"],
     stock: 38,
   },
   {
-    id: 20, name: "Château d'Yquem", vintage: 2015,
-    region: "Pháp", subregion: "Sauternes", type: "dessert",
-    grape: "Sémillon / Sauvignon Blanc", abv: 14.0, volume: "375ml",
-    price: 8500000, oldPrice: null,
-    score: 98, rating: 4.9, reviews: 76,
+    id: 20,
+    name: "Château d'Yquem",
+    vintage: 2015,
+    region: "Pháp",
+    subregion: "Sauternes",
+    type: "dessert",
+    grape: "Sémillon / Sauvignon Blanc",
+    abv: 14.0,
+    volume: "375ml",
+    price: 8500000,
+    oldPrice: null,
+    score: 98,
+    rating: 4.9,
+    reviews: 76,
     badge: "Vang ngọt đỉnh cao",
     img: "images/dessert_wine_bottle.jpg",
-    tasting: { color: "Vàng mật ong óng ánh", nose: "Mơ sấy, mật ong, hoa acacia, gừng", palate: "Ngọt ngào uy nghi, cân bằng hoàn hảo bởi độ acid", finish: "Vô tận, mật hoa" },
+    tasting: {
+      color: "Vàng mật ong óng ánh",
+      nose: "Mơ sấy, mật ong, hoa acacia, gừng",
+      palate: "Ngọt ngào uy nghi, cân bằng hoàn hảo bởi độ acid",
+      finish: "Vô tận, mật hoa",
+    },
     food: ["Foie gras", "Tôm hùm sốt bơ", "Phô mai Roquefort"],
     tags: ["dessert", "luxury", "sauternes"],
     stock: 9,
   },
   {
-    id: 21, name: "Glenfiddich 18 Year", vintage: null,
-    region: "Scotland", subregion: "Speyside", type: "whisky",
-    grape: null, abv: 40.0, volume: "700ml",
-    price: 2100000, oldPrice: 2500000,
-    score: 91, rating: 4.6, reviews: 418,
+    id: 21,
+    name: "Glenfiddich 18 Year",
+    vintage: null,
+    region: "Scotland",
+    subregion: "Speyside",
+    type: "whisky",
+    grape: null,
+    abv: 40.0,
+    volume: "700ml",
+    price: 2100000,
+    oldPrice: 2500000,
+    score: 91,
+    rating: 4.6,
+    reviews: 418,
     badge: "Bán chạy",
     img: "images/whisky_bottle.jpg",
-    tasting: { color: "Vàng amber ấm", nose: "Đào, lê, oak, mật ong nhẹ", palate: "Mượt mà, trái cây ngọt, vanilla", finish: "Ấm áp, vừa phải" },
+    tasting: {
+      color: "Vàng amber ấm",
+      nose: "Đào, lê, oak, mật ong nhẹ",
+      palate: "Mượt mà, trái cây ngọt, vanilla",
+      finish: "Ấm áp, vừa phải",
+    },
     food: ["Chocolate sữa", "Hạt điều rang", "Phô mai cheddar"],
     tags: ["whisky", "single-malt", "everyday"],
     stock: 55,
   },
   {
-    id: 22, name: "Clos du Val Estate Chardonnay", vintage: 2021,
-    region: "Mỹ", subregion: "Napa Valley", type: "white",
-    grape: "Chardonnay", abv: 14.2, volume: "750ml",
-    price: 1200000, oldPrice: 1450000,
-    score: 90, rating: 4.5, reviews: 187,
+    id: 22,
+    name: "Clos du Val Estate Chardonnay",
+    vintage: 2021,
+    region: "Mỹ",
+    subregion: "Napa Valley",
+    type: "white",
+    grape: "Chardonnay",
+    abv: 14.2,
+    volume: "750ml",
+    price: 1200000,
+    oldPrice: 1450000,
+    score: 90,
+    rating: 4.5,
+    reviews: 187,
     badge: null,
     img: "images/white_wine_bottle.jpg",
-    tasting: { color: "Vàng rơm sáng", nose: "Táo vàng, bơ, vanilla, sồi nhẹ", palate: "Béo ngậy vừa phải, cân bằng tốt, tươi mát", finish: "Trung bình dài, trái cây" },
+    tasting: {
+      color: "Vàng rơm sáng",
+      nose: "Táo vàng, bơ, vanilla, sồi nhẹ",
+      palate: "Béo ngậy vừa phải, cân bằng tốt, tươi mát",
+      finish: "Trung bình dài, trái cây",
+    },
     food: ["Gà áp chảo bơ chanh", "Cá trắng nướng", "Risotto hải sản"],
     tags: ["white", "usa", "chardonnay"],
     stock: 42,
   },
   {
-    id: 23, name: "Pio Cesare Barolo DOCG", vintage: 2018,
-    region: "Ý", subregion: "Barolo", type: "red",
-    grape: "Nebbiolo", abv: 14.5, volume: "750ml",
-    price: 3200000, oldPrice: 3800000,
-    score: 93, rating: 4.7, reviews: 134,
+    id: 23,
+    name: "Pio Cesare Barolo DOCG",
+    vintage: 2018,
+    region: "Ý",
+    subregion: "Barolo",
+    type: "red",
+    grape: "Nebbiolo",
+    abv: 14.5,
+    volume: "750ml",
+    price: 3200000,
+    oldPrice: 3800000,
+    score: 93,
+    rating: 4.7,
+    reviews: 134,
     badge: "Giảm 15%",
     img: "images/red_wine_bottle.jpg",
-    tasting: { color: "Đỏ garnet viền cam nhạt", nose: "Hoa hồng khô, cherry đen, nhựa thơm, đất", palate: "Tanin mạnh nhưng thanh lịch, phức hợp", finish: "Dài, khô và khoáng" },
+    tasting: {
+      color: "Đỏ garnet viền cam nhạt",
+      nose: "Hoa hồng khô, cherry đen, nhựa thơm, đất",
+      palate: "Tanin mạnh nhưng thanh lịch, phức hợp",
+      finish: "Dài, khô và khoáng",
+    },
     food: ["Braised beef", "Truffle pasta", "Phô mai Parmigiano"],
     tags: ["italian", "barolo", "premium"],
     stock: 27,
   },
   {
-    id: 24, name: "Baileys Original Irish Cream", vintage: null,
-    region: "Ireland", subregion: null, type: "liqueur",
-    grape: null, abv: 17.0, volume: "700ml",
-    price: 650000, oldPrice: 750000,
-    score: 88, rating: 4.5, reviews: 862,
+    id: 24,
+    name: "Baileys Original Irish Cream",
+    vintage: null,
+    region: "Ireland",
+    subregion: null,
+    type: "liqueur",
+    grape: null,
+    abv: 17.0,
+    volume: "700ml",
+    price: 650000,
+    oldPrice: 750000,
+    score: 88,
+    rating: 4.5,
+    reviews: 862,
     badge: "Yêu thích",
     img: "images/cognac_bottle.jpg",
-    tasting: { color: "Nâu kem mịn màng", nose: "Kem tươi, chocolate sữa, whisky nhẹ", palate: "Ngọt ngào, béo, êm dịu", finish: "Ngắn, ngọt và kem" },
+    tasting: {
+      color: "Nâu kem mịn màng",
+      nose: "Kem tươi, chocolate sữa, whisky nhẹ",
+      palate: "Ngọt ngào, béo, êm dịu",
+      finish: "Ngắn, ngọt và kem",
+    },
     food: ["Bánh tiramisu", "Ice cream", "Cà phê Irish"],
     tags: ["liqueur", "everyday", "gift", "dessert"],
     stock: 150,
   },
   {
-    id: 25, name: "Hennessy VSOP Privilege", vintage: null,
-    region: "Pháp", subregion: "Cognac", type: "brandy",
-    grape: null, abv: 40.0, volume: "700ml",
-    price: 1900000, oldPrice: 2200000,
-    score: 90, rating: 4.6, reviews: 534,
+    id: 25,
+    name: "Hennessy VSOP Privilege",
+    vintage: null,
+    region: "Pháp",
+    subregion: "Cognac",
+    type: "brandy",
+    grape: null,
+    abv: 40.0,
+    volume: "700ml",
+    price: 1900000,
+    oldPrice: 2200000,
+    score: 90,
+    rating: 4.6,
+    reviews: 534,
     badge: "Phổ biến",
     img: "images/cognac_bottle.jpg",
-    tasting: { color: "Amber vàng ấm áp", nose: "Hoa quả nướng, hương gỗ, vanilla", palate: "Mượt mà, cân bằng, ấm và tinh tế", finish: "Dài vừa, dứt khoát" },
+    tasting: {
+      color: "Amber vàng ấm áp",
+      nose: "Hoa quả nướng, hương gỗ, vanilla",
+      palate: "Mượt mà, cân bằng, ấm và tinh tế",
+      finish: "Dài vừa, dứt khoát",
+    },
     food: ["Sô cô la đen", "Trái cây sấy", "Phô mai gruyère"],
     tags: ["cognac", "brandy", "everyday", "gift"],
     stock: 90,
   },
   {
-    id: 26, name: "Masi Amarone della Valpolicella", vintage: 2017,
-    region: "Ý", subregion: "Veneto", type: "red",
-    grape: "Corvina / Molinara / Rondinella", abv: 15.5, volume: "750ml",
-    price: 2800000, oldPrice: 3200000,
-    score: 94, rating: 4.7, reviews: 178,
+    id: 26,
+    name: "Masi Amarone della Valpolicella",
+    vintage: 2017,
+    region: "Ý",
+    subregion: "Veneto",
+    type: "red",
+    grape: "Corvina / Molinara / Rondinella",
+    abv: 15.5,
+    volume: "750ml",
+    price: 2800000,
+    oldPrice: 3200000,
+    score: 94,
+    rating: 4.7,
+    reviews: 178,
     badge: "Đậm đà",
     img: "images/red_wine_bottle.jpg",
-    tasting: { color: "Đỏ ruby đậm sẫm gần như tím", nose: "Anh đào đen, mận khô, socola đen, thuốc lá", palate: "Đậm đà, đầy đặn, phức hợp, tanin mềm", finish: "Rất dài, ấm" },
+    tasting: {
+      color: "Đỏ ruby đậm sẫm gần như tím",
+      nose: "Anh đào đen, mận khô, socola đen, thuốc lá",
+      palate: "Đậm đà, đầy đặn, phức hợp, tanin mềm",
+      finish: "Rất dài, ấm",
+    },
     food: ["Thịt bò hầm", "Phô mai Pecorino", "Risotto thịt"],
     tags: ["italian", "amarone", "bold"],
     stock: 32,
   },
   {
-    id: 27, name: "Kumeu River Chardonnay", vintage: 2021,
-    region: "New Zealand", subregion: "Auckland", type: "white",
-    grape: "Chardonnay", abv: 13.5, volume: "750ml",
-    price: 1100000, oldPrice: 1300000,
-    score: 93, rating: 4.6, reviews: 99,
+    id: 27,
+    name: "Kumeu River Chardonnay",
+    vintage: 2021,
+    region: "New Zealand",
+    subregion: "Auckland",
+    type: "white",
+    grape: "Chardonnay",
+    abv: 13.5,
+    volume: "750ml",
+    price: 1100000,
+    oldPrice: 1300000,
+    score: 93,
+    rating: 4.6,
+    reviews: 99,
     badge: null,
     img: "images/white_wine_bottle.jpg",
-    tasting: { color: "Vàng xanh nhạt trong suốt", nose: "Táo xanh, nho, hoa trắng, sồi nhẹ", palate: "Tươi sáng, khoáng, ít gỗ, thanh lịch", finish: "Dài và sạch" },
+    tasting: {
+      color: "Vàng xanh nhạt trong suốt",
+      nose: "Táo xanh, nho, hoa trắng, sồi nhẹ",
+      palate: "Tươi sáng, khoáng, ít gỗ, thanh lịch",
+      finish: "Dài và sạch",
+    },
     food: ["Cá sole áp chảo", "Tôm hùm không sốt", "Salad rau xanh"],
     tags: ["white", "newzealand", "chardonnay"],
     stock: 44,
   },
   {
-    id: 28, name: "Caymus Cabernet Sauvignon", vintage: 2021,
-    region: "Mỹ", subregion: "Napa Valley", type: "red",
-    grape: "Cabernet Sauvignon", abv: 14.8, volume: "750ml",
-    price: 3600000, oldPrice: 4200000,
-    score: 93, rating: 4.7, reviews: 289,
+    id: 28,
+    name: "Caymus Cabernet Sauvignon",
+    vintage: 2021,
+    region: "Mỹ",
+    subregion: "Napa Valley",
+    type: "red",
+    grape: "Cabernet Sauvignon",
+    abv: 14.8,
+    volume: "750ml",
+    price: 3600000,
+    oldPrice: 4200000,
+    score: 93,
+    rating: 4.7,
+    reviews: 289,
     badge: "Napa Favorite",
     img: "images/red_wine_bottle.jpg",
-    tasting: { color: "Đỏ ruby đậm", nose: "Mứt mâm xôi, anh đào đen, vanilla, sồi ngọt", palate: "Đầy đặn, mềm mại, dễ tiếp cận, trái cây chín", finish: "Dài ấm, trái cây và gỗ" },
+    tasting: {
+      color: "Đỏ ruby đậm",
+      nose: "Mứt mâm xôi, anh đào đen, vanilla, sồi ngọt",
+      palate: "Đầy đặn, mềm mại, dễ tiếp cận, trái cây chín",
+      finish: "Dài ấm, trái cây và gỗ",
+    },
     food: ["Ribeye steak", "Bò bít tết", "BBQ sườn non"],
     tags: ["usa", "napa", "premium"],
     stock: 35,
   },
 ];
 
-
 // ─── COUNTRY FLAG MAP ─────────────────────────────────────────
 const FLAGS = {
-  'Pháp': '<img src="https://flagcdn.com/w20/fr.png" srcset="https://flagcdn.com/w40/fr.png 2x" alt="Pháp" class="flag-icon">',
-  'France': '<img src="https://flagcdn.com/w20/fr.png" srcset="https://flagcdn.com/w40/fr.png 2x" alt="Pháp" class="flag-icon">',
-  'Ý': '<img src="https://flagcdn.com/w20/it.png" srcset="https://flagcdn.com/w40/it.png 2x" alt="Ý" class="flag-icon">',
-  'Italy': '<img src="https://flagcdn.com/w20/it.png" srcset="https://flagcdn.com/w40/it.png 2x" alt="Ý" class="flag-icon">',
-  'Mỹ': '<img src="https://flagcdn.com/w20/us.png" srcset="https://flagcdn.com/w40/us.png 2x" alt="Mỹ" class="flag-icon">',
-  'USA': '<img src="https://flagcdn.com/w20/us.png" srcset="https://flagcdn.com/w40/us.png 2x" alt="Mỹ" class="flag-icon">',
-  'Scotland': '<img src="https://flagcdn.com/w20/gb-sct.png" srcset="https://flagcdn.com/w40/gb-sct.png 2x" alt="Scotland" class="flag-icon">',
-  'Ireland': '<img src="https://flagcdn.com/w20/ie.png" srcset="https://flagcdn.com/w40/ie.png 2x" alt="Ireland" class="flag-icon">',
-  'Chile': '<img src="https://flagcdn.com/w20/cl.png" srcset="https://flagcdn.com/w40/cl.png 2x" alt="Chile" class="flag-icon">',
-  'New Zealand': '<img src="https://flagcdn.com/w20/nz.png" srcset="https://flagcdn.com/w40/nz.png 2x" alt="New Zealand" class="flag-icon">',
-  'Úc': '<img src="https://flagcdn.com/w20/au.png" srcset="https://flagcdn.com/w40/au.png 2x" alt="Úc" class="flag-icon">',
-  'Australia': '<img src="https://flagcdn.com/w20/au.png" srcset="https://flagcdn.com/w40/au.png 2x" alt="Úc" class="flag-icon">',
-  'Tây Ban Nha': '<img src="https://flagcdn.com/w20/es.png" srcset="https://flagcdn.com/w40/es.png 2x" alt="Tây Ban Nha" class="flag-icon">',
-  'Spain': '<img src="https://flagcdn.com/w20/es.png" srcset="https://flagcdn.com/w40/es.png 2x" alt="Tây Ban Nha" class="flag-icon">',
-  'Đức': '<img src="https://flagcdn.com/w20/de.png" srcset="https://flagcdn.com/w40/de.png 2x" alt="Đức" class="flag-icon">',
-  'Germany': '<img src="https://flagcdn.com/w20/de.png" srcset="https://flagcdn.com/w40/de.png 2x" alt="Đức" class="flag-icon">',
-  'Bồ Đào Nha': '<img src="https://flagcdn.com/w20/pt.png" srcset="https://flagcdn.com/w40/pt.png 2x" alt="Bồ Đào Nha" class="flag-icon">',
-  'Portugal': '<img src="https://flagcdn.com/w20/pt.png" srcset="https://flagcdn.com/w40/pt.png 2x" alt="Bồ Đào Nha" class="flag-icon">',
-  'Argentina': '<img src="https://flagcdn.com/w20/ar.png" srcset="https://flagcdn.com/w40/ar.png 2x" alt="Argentina" class="flag-icon">',
-  'Nam Phi': '<img src="https://flagcdn.com/w20/za.png" srcset="https://flagcdn.com/w40/za.png 2x" alt="Nam Phi" class="flag-icon">',
-  'Nhật Bản': '<img src="https://flagcdn.com/w20/jp.png" srcset="https://flagcdn.com/w40/jp.png 2x" alt="Nhật Bản" class="flag-icon">',
-  'Japan': '<img src="https://flagcdn.com/w20/jp.png" srcset="https://flagcdn.com/w40/jp.png 2x" alt="Nhật Bản" class="flag-icon">',
+  Pháp: '<img src="https://flagcdn.com/w20/fr.png" srcset="https://flagcdn.com/w40/fr.png 2x" alt="Pháp" class="flag-icon">',
+  France:
+    '<img src="https://flagcdn.com/w20/fr.png" srcset="https://flagcdn.com/w40/fr.png 2x" alt="Pháp" class="flag-icon">',
+  Ý: '<img src="https://flagcdn.com/w20/it.png" srcset="https://flagcdn.com/w40/it.png 2x" alt="Ý" class="flag-icon">',
+  Italy:
+    '<img src="https://flagcdn.com/w20/it.png" srcset="https://flagcdn.com/w40/it.png 2x" alt="Ý" class="flag-icon">',
+  Mỹ: '<img src="https://flagcdn.com/w20/us.png" srcset="https://flagcdn.com/w40/us.png 2x" alt="Mỹ" class="flag-icon">',
+  USA: '<img src="https://flagcdn.com/w20/us.png" srcset="https://flagcdn.com/w40/us.png 2x" alt="Mỹ" class="flag-icon">',
+  Scotland:
+    '<img src="https://flagcdn.com/w20/gb-sct.png" srcset="https://flagcdn.com/w40/gb-sct.png 2x" alt="Scotland" class="flag-icon">',
+  Ireland:
+    '<img src="https://flagcdn.com/w20/ie.png" srcset="https://flagcdn.com/w40/ie.png 2x" alt="Ireland" class="flag-icon">',
+  Chile:
+    '<img src="https://flagcdn.com/w20/cl.png" srcset="https://flagcdn.com/w40/cl.png 2x" alt="Chile" class="flag-icon">',
+  "New Zealand":
+    '<img src="https://flagcdn.com/w20/nz.png" srcset="https://flagcdn.com/w40/nz.png 2x" alt="New Zealand" class="flag-icon">',
+  Úc: '<img src="https://flagcdn.com/w20/au.png" srcset="https://flagcdn.com/w40/au.png 2x" alt="Úc" class="flag-icon">',
+  Australia:
+    '<img src="https://flagcdn.com/w20/au.png" srcset="https://flagcdn.com/w40/au.png 2x" alt="Úc" class="flag-icon">',
+  "Tây Ban Nha":
+    '<img src="https://flagcdn.com/w20/es.png" srcset="https://flagcdn.com/w40/es.png 2x" alt="Tây Ban Nha" class="flag-icon">',
+  Spain:
+    '<img src="https://flagcdn.com/w20/es.png" srcset="https://flagcdn.com/w40/es.png 2x" alt="Tây Ban Nha" class="flag-icon">',
+  Đức: '<img src="https://flagcdn.com/w20/de.png" srcset="https://flagcdn.com/w40/de.png 2x" alt="Đức" class="flag-icon">',
+  Germany:
+    '<img src="https://flagcdn.com/w20/de.png" srcset="https://flagcdn.com/w40/de.png 2x" alt="Đức" class="flag-icon">',
+  "Bồ Đào Nha":
+    '<img src="https://flagcdn.com/w20/pt.png" srcset="https://flagcdn.com/w40/pt.png 2x" alt="Bồ Đào Nha" class="flag-icon">',
+  Portugal:
+    '<img src="https://flagcdn.com/w20/pt.png" srcset="https://flagcdn.com/w40/pt.png 2x" alt="Bồ Đào Nha" class="flag-icon">',
+  Argentina:
+    '<img src="https://flagcdn.com/w20/ar.png" srcset="https://flagcdn.com/w40/ar.png 2x" alt="Argentina" class="flag-icon">',
+  "Nam Phi":
+    '<img src="https://flagcdn.com/w20/za.png" srcset="https://flagcdn.com/w40/za.png 2x" alt="Nam Phi" class="flag-icon">',
+  "Nhật Bản":
+    '<img src="https://flagcdn.com/w20/jp.png" srcset="https://flagcdn.com/w40/jp.png 2x" alt="Nhật Bản" class="flag-icon">',
+  Japan:
+    '<img src="https://flagcdn.com/w20/jp.png" srcset="https://flagcdn.com/w40/jp.png 2x" alt="Nhật Bản" class="flag-icon">',
 };
 function getFlag(region) {
-  return FLAGS[region] ? FLAGS[region] + ' ' : '';
+  return FLAGS[region] ? FLAGS[region] + " " : "";
 }
 
 // ─── CURRENCY CONFIG ──────────────────────────────────────────
 
 const CURRENCIES = {
-  VND: { symbol: '₫', rate: 1, format: v => `${(v).toLocaleString('vi-VN')}₫` },
-  USD: { symbol: '$', rate: 0.000039, format: v => `$${(v * 0.000039).toFixed(2)}` },
-  EUR: { symbol: '€', rate: 0.000036, format: v => `€${(v * 0.000036).toFixed(2)}` },
+  VND: { symbol: "₫", rate: 1, format: (v) => `${v.toLocaleString("vi-VN")}₫` },
+  USD: {
+    symbol: "$",
+    rate: 0.000039,
+    format: (v) => `$${(v * 0.000039).toFixed(2)}`,
+  },
+  EUR: {
+    symbol: "€",
+    rate: 0.000036,
+    format: (v) => `€${(v * 0.000036).toFixed(2)}`,
+  },
 };
 
 function formatPrice(vnd) {
@@ -472,154 +901,257 @@ function formatPrice(vnd) {
 
 // ─── UTILITIES ────────────────────────────────────────────────
 function saveState() {
-  localStorage.setItem('vinova_cart', JSON.stringify(state.cart));
-  localStorage.setItem('vinova_wishlist', JSON.stringify(state.wishlist));
-  localStorage.setItem('vinova_currency', state.currency);
-  localStorage.setItem('vinova_lang', state.lang);
+  localStorage.setItem("vinova_cart", JSON.stringify(state.cart));
+  localStorage.setItem("vinova_wishlist", JSON.stringify(state.wishlist));
+  localStorage.setItem("vinova_currency", state.currency);
+  localStorage.setItem("vinova_lang", state.lang);
 }
 
-function showToast(msg, type = 'info', duration = 3000) {
-  const icons = { success: '✓', error: '✕', info: '🍷' };
-  const container = document.getElementById('toastContainer');
+function showToast(msg, type = "info", duration = 3000) {
+  const icons = { success: "✓", error: "✕", info: "🍷" };
+  const container = document.getElementById("toastContainer");
   if (!container) return;
-  const t = document.createElement('div');
+  const t = document.createElement("div");
   t.className = `toast ${type}`;
   t.innerHTML = `<span style="font-size:1.1rem">${icons[type]}</span><span>${msg}</span>`;
   container.appendChild(t);
-  setTimeout(() => { t.style.animation = 'slideInRight .3s ease reverse'; setTimeout(() => t.remove(), 300); }, duration);
+  setTimeout(() => {
+    t.style.animation = "slideInRight .3s ease reverse";
+    setTimeout(() => t.remove(), 300);
+  }, duration);
 }
 
-function cartCount() { return state.cart.reduce((s, i) => s + i.qty, 0); }
+function cartCount() {
+  return state.cart.reduce((s, i) => s + i.qty, 0);
+}
 
-function updateCartBadge() {
-  document.querySelectorAll('.cart-badge').forEach(el => {
+window.updateCartBadge = function () {
+  document.querySelectorAll(".cart-badge").forEach((el) => {
     const count = cartCount();
     el.textContent = count;
-    el.style.display = count > 0 ? 'flex' : 'none';
+    el.style.display = count > 0 ? "flex" : "none";
   });
-}
+};
+const updateCartBadge = window.updateCartBadge;
 
 // ─── AGE GATE ─────────────────────────────────────────────────
 function initAgeGate() {
-  const overlay = document.getElementById('ageGate');
+  const overlay = document.getElementById("ageGate");
   if (!overlay) return;
-  if (state.ageVerified) { overlay.remove(); return; }
+  if (state.ageVerified) {
+    overlay.remove();
+    return;
+  }
 
-  document.getElementById('ageYes')?.addEventListener('click', () => {
+  document.getElementById("ageYes")?.addEventListener("click", () => {
     state.ageVerified = true;
-    localStorage.setItem('vinova_age', 'true');
-    overlay.style.animation = 'fadeIn .3s ease reverse';
+    localStorage.setItem("vinova_age", "true");
+    overlay.style.animation = "fadeIn .3s ease reverse";
     setTimeout(() => overlay.remove(), 300);
   });
-  document.getElementById('ageNo')?.addEventListener('click', () => {
-    window.location.href = 'https://google.com';
+  document.getElementById("ageNo")?.addEventListener("click", () => {
+    window.location.href = "https://google.com";
   });
-  document.getElementById('ageDobConfirm')?.addEventListener('click', () => {
-    const d = +document.getElementById('dobDay')?.value;
-    const m = +document.getElementById('dobMonth')?.value;
-    const y = +document.getElementById('dobYear')?.value;
-    if (!d || !m || !y) { showToast('Vui lòng nhập đầy đủ ngày sinh', 'error'); return; }
+  document.getElementById("ageDobConfirm")?.addEventListener("click", () => {
+    const d = +document.getElementById("dobDay")?.value;
+    const m = +document.getElementById("dobMonth")?.value;
+    const y = +document.getElementById("dobYear")?.value;
+    if (!d || !m || !y) {
+      showToast("Vui lòng nhập đầy đủ ngày sinh", "error");
+      return;
+    }
     const dob = new Date(y, m - 1, d);
     const age = (new Date() - dob) / (1000 * 60 * 60 * 24 * 365.25);
     if (age >= 18) {
-      state.ageVerified = true; localStorage.setItem('vinova_age', 'true');
-      overlay.style.animation = 'fadeIn .3s ease reverse';
+      state.ageVerified = true;
+      localStorage.setItem("vinova_age", "true");
+      overlay.style.animation = "fadeIn .3s ease reverse";
       setTimeout(() => overlay.remove(), 300);
-    } else { showToast('Bạn chưa đủ 18 tuổi để truy cập trang này', 'error'); }
+    } else {
+      showToast("Bạn chưa đủ 18 tuổi để truy cập trang này", "error");
+    }
   });
 }
 
 // ─── NAVIGATION ───────────────────────────────────────────────
 function navigate(page, data = {}) {
   // Check admin routing block
-  if (page === 'admin' && (!state.user || state.user.role !== 'admin')) {
-    showToast('Bạn không có quyền truy cập trang quản trị', 'error');
-    navigate('home');
+  if (page === "admin" && (!state.user || state.user.role !== "admin")) {
+    showToast("Bạn không có quyền truy cập trang quản trị", "error");
+    navigate("home");
     return;
   }
 
   state.page = page;
-  document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+  document
+    .querySelectorAll(".page-section")
+    .forEach((s) => s.classList.remove("active"));
   const target = document.getElementById(`page-${page}`);
-  if (target) { target.classList.add('active'); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
-  document.querySelectorAll('.navbar__link').forEach(l => {
-    l.classList.toggle('active', l.dataset.page === page);
+  if (target) {
+    target.classList.add("active");
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  document.querySelectorAll(".navbar__link").forEach((l) => {
+    l.classList.toggle("active", l.dataset.page === page);
   });
   window.scrollTo(0, 0);
-  if (page === 'products') renderProductListing();
-  if (page === 'product-detail' && data.id) renderProductDetail(data.id);
-  if (page === 'cart') renderCart();
-  if (page === 'checkout') renderCheckout();
-  if (page === 'account') renderAccount();
-  if (page === 'admin') renderAdmin();
-  if (page === 'wine-club') renderWineClub();
+  if (page === "products") renderProductListing();
+  if (page === "product-detail" && data.id) renderProductDetail(data.id);
+  if (page === "cart") renderCart();
+  if (page === "checkout") renderCheckout();
+  if (page === "account") renderAccount();
+  if (page === "admin") renderAdmin();
+  if (page === "wine-club") renderWineClub();
 }
 
 // ─── HAMBURGER ────────────────────────────────────────────────
 function initNav() {
-  document.querySelector('.hamburger')?.addEventListener('click', () => {
-    document.querySelector('.navbar__menu')?.classList.toggle('open');
+  document.querySelector(".hamburger")?.addEventListener("click", () => {
+    document.querySelector(".navbar__menu")?.classList.toggle("open");
   });
-  document.querySelectorAll('.navbar__link').forEach(link => {
-    link.addEventListener('click', (e) => {
+  document.querySelectorAll(".navbar__link").forEach((link) => {
+    link.addEventListener("click", (e) => {
       const page = link.dataset.page;
-      if (page) { e.preventDefault(); navigate(page); document.querySelector('.navbar__menu')?.classList.remove('open'); }
+      if (page) {
+        e.preventDefault();
+        navigate(page);
+        document.querySelector(".navbar__menu")?.classList.remove("open");
+      }
     });
   });
-  window.addEventListener('scroll', () => {
-    document.querySelector('.navbar')?.classList.toggle('scrolled', window.scrollY > 30);
+  window.addEventListener("scroll", () => {
+    document
+      .querySelector(".navbar")
+      ?.classList.toggle("scrolled", window.scrollY > 30);
   });
   // Currency
-  document.getElementById('currencySelect')?.addEventListener('change', (e) => {
-    state.currency = e.target.value; saveState(); updatePrices();
+  document.getElementById("currencySelect")?.addEventListener("change", (e) => {
+    state.currency = e.target.value;
+    saveState();
+    updatePrices();
   });
 }
 
 function updatePrices() {
-  document.querySelectorAll('[data-price]').forEach(el => {
+  document.querySelectorAll("[data-price]").forEach((el) => {
     el.textContent = formatPrice(+el.dataset.price);
   });
 }
 
 // ─── PRODUCT LISTING ──────────────────────────────────────────
 function renderProductListing() {
-  const container = document.getElementById('productGrid');
+  const container = document.getElementById("productGrid");
   if (!container) return;
-  container.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--c-muted)">⏳ Đang tải sản phẩm...</div>';
+  container.innerHTML =
+    '<div style="text-align:center;padding:3rem;color:var(--c-muted)">⏳ Đang tải sản phẩm...</div>';
 
-  const sort = document.getElementById('sortSelect')?.value || 'popular';
-  const params = { sort: sort.replace('-', '_'), limit: 50 };
-  if (state.filters.types?.length) params.type = state.filters.types[0];
-  if (state.filters.regions?.length) params.region = state.filters.regions[0];
+  const sort = document.getElementById("sortSelect")?.value || "popular";
+  const params = { sort: sort, limit: 50 };
+  if (state.filters.types?.length) params.type = state.filters.types.join(",");
+  if (state.filters.regions?.length)
+    params.region = state.filters.regions.join(",");
+  if (state.filters.ratings?.length)
+    params.rating = Math.min(...state.filters.ratings.map(Number));
+  if (state.filters.priceMax && state.filters.priceMax < 100000000)
+    params.priceMax = state.filters.priceMax;
+  if (state.filters.vintages?.length)
+    params.vintage = state.filters.vintages.join(",");
 
-  const apiCall = (typeof window.VINOVA_API !== 'undefined')
-    ? window.VINOVA_API.products.list(params).then(d => d.products)
-    : Promise.reject();
+  const apiCall =
+    typeof window.VINOVA_API !== "undefined"
+      ? window.VINOVA_API.products.list(params).then((d) => d.products)
+      : Promise.reject();
 
-  apiCall.catch(() => {
-    let products = [...PRODUCTS];
-    if (state.filters.types?.length) products = products.filter(p => state.filters.types.includes(p.type));
-    if (state.filters.regions?.length) products = products.filter(p => state.filters.regions.includes(p.region));
-    if (sort === 'price-asc') products.sort((a, b) => a.price - b.price);
-    else if (sort === 'price-desc') products.sort((a, b) => b.price - a.price);
-    else if (sort === 'rating') products.sort((a, b) => b.rating - a.rating);
-    else if (sort === 'newest') products.sort((a, b) => (b.vintage || 0) - (a.vintage || 0));
-    return products;
-  }).then(products => {
-    products = products.map(p => ({
-      ...p,
-      oldPrice: p.oldPrice !== undefined ? p.oldPrice : p.old_price,
-      reviews: p.reviews !== undefined ? p.reviews : p.reviews_count,
-      tasting: p.tasting || { color: '', nose: '', palate: '', finish: '' },
-      food: Array.isArray(p.food_pairing) ? p.food_pairing : (p.food || []),
-    }));
-    const el = document.getElementById('listingCount');
-    if (el) el.textContent = `${products.length} sản phẩm`;
-    container.innerHTML = products.map(p => productCardHTML(p)).join('');
-    attachProductCardEvents();
-  });
+  apiCall
+    .catch(() => {
+      let products = [...PRODUCTS];
+      if (state.filters.types?.length)
+        products = products.filter((p) => state.filters.types.includes(p.type));
+      if (state.filters.regions?.length)
+        products = products.filter((p) =>
+          state.filters.regions.includes(p.region),
+        );
+      if (state.filters.ratings?.length) {
+        const minRating = Math.min(...state.filters.ratings.map(Number));
+        products = products.filter(
+          (p) => p.rating >= minRating || p.score >= minRating,
+        );
+      }
+      if (
+        state.filters.priceMax !== undefined &&
+        state.filters.priceMax < 100000000
+      ) {
+        products = products.filter((p) => p.price <= state.filters.priceMax);
+      }
+      if (state.filters.vintages?.length) {
+        const selected = state.filters.vintages;
+        products = products.filter((p) => {
+          if (!p.vintage) return false;
+          const v = parseInt(p.vintage, 10);
+          return selected.some((range) => {
+            if (range === "2020-2022") return v >= 2020 && v <= 2022;
+            if (range === "2015-2019") return v >= 2015 && v <= 2019;
+            if (range === "2010-2014") return v >= 2010 && v <= 2014;
+            if (range === "pre-2010") return v < 2010;
+            return false;
+          });
+        });
+      }
+
+      if (sort === "price-asc") products.sort((a, b) => a.price - b.price);
+      else if (sort === "price-desc")
+        products.sort((a, b) => b.price - a.price);
+      else if (sort === "rating") products.sort((a, b) => b.rating - a.rating);
+      else if (sort === "newest")
+        products.sort((a, b) => (b.vintage || 0) - (a.vintage || 0));
+      return products;
+    })
+    .then((products) => {
+      products = products.map((p) => ({
+        ...p,
+        oldPrice: p.oldPrice !== undefined ? p.oldPrice : p.old_price,
+        reviews: p.reviews !== undefined ? p.reviews : p.reviews_count,
+        tasting: p.tasting || { color: "", nose: "", palate: "", finish: "" },
+        food: Array.isArray(p.food_pairing) ? p.food_pairing : p.food || [],
+      }));
+      const el = document.getElementById("listingCount");
+      if (el) el.textContent = `${products.length} sản phẩm`;
+      container.innerHTML = products.map((p) => productCardHTML(p)).join("");
+      attachProductCardEvents();
+      updateFilterCounts();
+    });
 }
 
+async function updateFilterCounts() {
+  try {
+    const counts = await window.VINOVA_API.products.getFilterCounts();
+    if (!counts) return;
+
+    // Update Types
+    document.querySelectorAll('[data-filter="types"]').forEach((input) => {
+      const val = input.value;
+      const countSpan = input.closest(".filter-option").querySelector(".count");
+      if (countSpan && counts.types[val] !== undefined) {
+        countSpan.textContent = counts.types[val];
+      } else if (countSpan) {
+        countSpan.textContent = "0";
+      }
+    });
+
+    // Update Regions
+    document.querySelectorAll('[data-filter="regions"]').forEach((input) => {
+      const val = input.value;
+      const countSpan = input.closest(".filter-option").querySelector(".count");
+      if (countSpan && counts.regions[val] !== undefined) {
+        countSpan.textContent = counts.regions[val];
+      } else if (countSpan) {
+        countSpan.textContent = "0";
+      }
+    });
+  } catch (err) {
+    console.error("Error updating filter counts:", err);
+  }
+}
 
 function productCardHTML(p) {
   const isWishlisted = state.wishlist.includes(p.id);
@@ -627,9 +1159,9 @@ function productCardHTML(p) {
   <div class="product-card" data-id="${p.id}">
     <div class="product-card__img-wrap">
       <img class="product-card__img" src="${p.img}" alt="${p.name}" onerror="this.src='images/placeholder.jpg'">
-      ${p.badge ? `<div class="product-card__badge"><span class="badge badge--gold">${p.badge}</span></div>` : ''}
-      <button class="product-card__wishlist ${isWishlisted ? 'active' : ''}" data-wish="${p.id}" title="Thêm yêu thích">
-        ${isWishlisted ? '♥' : '♡'}
+      ${p.badge ? `<div class="product-card__badge"><span class="badge badge--gold">${p.badge}</span></div>` : ""}
+      <button class="product-card__wishlist ${isWishlisted ? "active" : ""}" data-wish="${p.id}" title="Thêm yêu thích">
+        ${isWishlisted ? "♥" : "♡"}
       </button>
       <div class="product-card__actions">
         <button class="btn btn--primary btn--sm" data-add="${p.id}">Thêm vào giỏ</button>
@@ -637,13 +1169,13 @@ function productCardHTML(p) {
       </div>
     </div>
     <div class="product-card__info">
-      <div class="product-card__region">${getFlag(p.region)}${p.region} ${p.subregion ? `· ${p.subregion}` : ''}</div>
+      <div class="product-card__region">${getFlag(p.region)}${p.region} ${p.subregion ? `· ${p.subregion}` : ""}</div>
       <div class="product-card__name">${p.name}</div>
-      <div class="product-card__vintage">${p.vintage ? `Vintage ${p.vintage}` : ''} ${p.grape ? `· ${p.grape}` : ''} · ${p.volume}</div>
+      <div class="product-card__vintage">${p.vintage ? `Vintage ${p.vintage}` : ""} ${p.grape ? `· ${p.grape}` : ""} · ${p.volume}</div>
       <div class="product-card__footer">
         <div>
           <div class="product-card__price" data-price="${p.price}">${formatPrice(p.price)}</div>
-          ${p.oldPrice ? `<div class="product-card__price-old" data-price="${p.oldPrice}">${formatPrice(p.oldPrice)}</div>` : ''}
+          ${p.oldPrice ? `<div class="product-card__price-old" data-price="${p.oldPrice}">${formatPrice(p.oldPrice)}</div>` : ""}
         </div>
         <div class="product-card__rating">★ ${p.rating} <span style="color:var(--c-muted)">(${p.reviews})</span></div>
       </div>
@@ -652,59 +1184,89 @@ function productCardHTML(p) {
 }
 
 function attachProductCardEvents() {
-  document.querySelectorAll('[data-add]').forEach(btn => {
-    btn.addEventListener('click', (e) => { e.stopPropagation(); addToCart(+btn.dataset.add); });
+  document.querySelectorAll("[data-add]").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      addToCart(+btn.dataset.add);
+    });
   });
-  document.querySelectorAll('[data-detail]').forEach(btn => {
-    btn.addEventListener('click', (e) => { e.stopPropagation(); navigate('product-detail', { id: +btn.dataset.detail }); });
+  document.querySelectorAll("[data-detail]").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      navigate("product-detail", { id: +btn.dataset.detail });
+    });
   });
-  document.querySelectorAll('[data-wish]').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+  document.querySelectorAll("[data-wish]").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
       e.stopPropagation();
       const id = +btn.dataset.wish;
       if (state.wishlist.includes(id)) {
         state.wishlist.splice(state.wishlist.indexOf(id), 1);
-        btn.classList.remove('active'); btn.textContent = '♡';
-        showToast('Đã xóa khỏi danh sách yêu thích', 'info');
+        btn.classList.remove("active");
+        btn.textContent = "♡";
+        showToast("Đã xóa khỏi danh sách yêu thích", "info");
       } else {
         state.wishlist.push(id);
-        btn.classList.add('active'); btn.textContent = '♥';
-        showToast('Đã thêm vào danh sách yêu thích 💛', 'success');
+        btn.classList.add("active");
+        btn.textContent = "♥";
+        showToast("Đã thêm vào danh sách yêu thích 💛", "success");
       }
       saveState();
     });
   });
-  document.querySelectorAll('.product-card').forEach(card => {
-    card.addEventListener('click', (e) => {
-      if (!e.target.closest('button')) navigate('product-detail', { id: +card.dataset.id });
+  document.querySelectorAll(".product-card").forEach((card) => {
+    card.addEventListener("click", (e) => {
+      if (!e.target.closest("button"))
+        navigate("product-detail", { id: +card.dataset.id });
     });
   });
 }
 
 // ─── PRODUCT DETAIL ───────────────────────────────────────────
 function renderProductDetail(id) {
-  const container = document.getElementById('productDetailContent');
+  const container = document.getElementById("productDetailContent");
   if (!container) return;
-  container.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--c-muted)">⏳ Đang tải...</div>';
+  container.innerHTML =
+    '<div style="text-align:center;padding:3rem;color:var(--c-muted)">⏳ Đang tải...</div>';
   // Thử API trước, fallback PRODUCTS tĩnh
-  const apiPromise = (typeof window.VINOVA_API !== 'undefined')
-    ? window.VINOVA_API.products.get(id).then(d => ({ ...d.product, reviews_list: d.reviews }))
-    : Promise.reject();
-  apiPromise.catch(() => PRODUCTS.find(x => x.id === id)).then(p => {
-    if (!p) { container.innerHTML = '<div style="padding:2rem">Không tìm thấy sản phẩm</div>'; return; }
-    // Normalize
-    p = {
-      ...p, oldPrice: p.oldPrice ?? p.old_price, reviews: p.reviews ?? p.reviews_count,
-      tasting: p.tasting || { color: p.tasting_notes?.[0] || '', nose: p.tasting_notes?.[1] || '', palate: p.tasting_notes?.[2] || '', finish: '' },
-      food: Array.isArray(p.food_pairing) ? p.food_pairing : (p.food || [])
-    };
-    if (typeof window.trackProductView === 'function') window.trackProductView(p);
-    if (typeof window.saveProductViewToFirestore === 'function') window.saveProductViewToFirestore(p);
+  const apiPromise =
+    typeof window.VINOVA_API !== "undefined"
+      ? window.VINOVA_API.products
+          .get(id)
+          .then((d) => ({ ...d.product, reviews_list: d.reviews }))
+      : Promise.reject();
+  apiPromise
+    .catch(() => PRODUCTS.find((x) => x.id === id))
+    .then((p) => {
+      if (!p) {
+        container.innerHTML =
+          '<div style="padding:2rem">Không tìm thấy sản phẩm</div>';
+        return;
+      }
+      // Normalize
+      p = {
+        ...p,
+        oldPrice: p.oldPrice ?? p.old_price,
+        reviews: p.reviews ?? p.reviews_count,
+        tasting: p.tasting || {
+          color: p.tasting_notes?.color || "",
+          nose: p.tasting_notes?.nose || "",
+          palate: p.tasting_notes?.palate || "",
+          finish: p.tasting_notes?.finish || "",
+        },
+        food: Array.isArray(p.food_pairing) ? p.food_pairing : p.food || [],
+      };
+      if (typeof window.trackProductView === "function")
+        window.trackProductView(p);
+      if (typeof window.saveProductViewToFirestore === "function")
+        window.saveProductViewToFirestore(p);
 
+      const stars =
+        "★".repeat(Math.floor(p.rating)) +
+        (p.rating % 1 >= 0.5 ? "½" : "") +
+        "☆".repeat(5 - Math.ceil(p.rating));
 
-    const stars = '★'.repeat(Math.floor(p.rating)) + (p.rating % 1 >= 0.5 ? '½' : '') + '☆'.repeat(5 - Math.ceil(p.rating));
-
-    container.innerHTML = `
+      container.innerHTML = `
   <div class="product-detail animate-up">
     <!-- Gallery -->
     <div class="product-gallery">
@@ -712,10 +1274,14 @@ function renderProductDetail(id) {
         <img src="${p.img}" alt="${p.name}" id="galleryMain" onerror="this.src='images/placeholder.jpg'">
       </div>
       <div class="gallery-thumbs">
-        ${[p.img, p.img, p.img].map((img, i) => `
-          <div class="gallery-thumb ${i === 0 ? 'active' : ''}" onclick="switchThumb(this,'${img}')">
+        ${[p.img, p.img, p.img]
+          .map(
+            (img, i) => `
+          <div class="gallery-thumb ${i === 0 ? "active" : ""}" onclick="switchThumb(this,'${img}')">
             <img src="${img}" alt="" onerror="this.src='images/placeholder.jpg'">
-          </div>`).join('')}
+          </div>`,
+          )
+          .join("")}
       </div>
     </div>
     <!-- Info -->
@@ -727,32 +1293,32 @@ function renderProductDetail(id) {
         <span>›</span>
         <span>${p.name}</span>
       </div>
-      <div class="product-info__brand">${getFlag(p.region)}${p.region} · ${p.subregion || ''}</div>
+      <div class="product-info__brand">${getFlag(p.region)}${p.region} · ${p.subregion || ""}</div>
       <h1 class="product-info__title">${p.name}</h1>
       <div class="product-info__rating">
         <div class="stars">${stars}</div>
         <span class="review-count">${p.reviews} đánh giá</span>
-        ${p.score ? `<div class="score-badge">${p.score}</div>` : ''}
+        ${p.score ? `<div class="score-badge">${p.score}</div>` : ""}
         <span class="badge badge--red">RP Score</span>
       </div>
       <div class="product-info__meta">
-        ${p.vintage ? `<div class="meta-item"><div class="meta-item__label">Vintage</div><div class="meta-item__value">${p.vintage}</div></div>` : ''}
+        ${p.vintage ? `<div class="meta-item"><div class="meta-item__label">Vintage</div><div class="meta-item__value">${p.vintage}</div></div>` : ""}
         <div class="meta-item"><div class="meta-item__label">Nồng độ</div><div class="meta-item__value">${p.abv}%</div></div>
         <div class="meta-item"><div class="meta-item__label">Dung tích</div><div class="meta-item__value">${p.volume}</div></div>
-        ${p.grape ? `<div class="meta-item"><div class="meta-item__label">Giống nho</div><div class="meta-item__value" style="font-size:.8rem">${p.grape}</div></div>` : ''}
-        <div class="meta-item"><div class="meta-item__label">Tồn kho</div><div class="meta-item__value" style="color:${p.stock < 10 ? '#e88a8a' : 'var(--c-success)'}">${p.stock < 10 ? `⚠ ${p.stock} chai` : `✓ Còn hàng`}</div></div>
+        ${p.grape ? `<div class="meta-item"><div class="meta-item__label">Giống nho</div><div class="meta-item__value" style="font-size:.8rem">${p.grape}</div></div>` : ""}
+        <div class="meta-item"><div class="meta-item__label">Tồn kho</div><div class="meta-item__value" style="color:${p.stock < 10 ? "#e88a8a" : "var(--c-success)"}">${p.stock < 10 ? `⚠ ${p.stock} chai` : `✓ Còn hàng`}</div></div>
       </div>
       <div class="product-info__price">
         <span class="price-main" data-price="${p.price}">${formatPrice(p.price)}</span>
-        ${p.oldPrice ? `<span class="price-old" data-price="${p.oldPrice}">${formatPrice(p.oldPrice)}</span>` : ''}
-        ${p.oldPrice ? `<span class="badge badge--red">-${Math.round((1 - p.price / p.oldPrice) * 100)}%</span>` : ''}
+        ${p.oldPrice ? `<span class="price-old" data-price="${p.oldPrice}">${formatPrice(p.oldPrice)}</span>` : ""}
+        ${p.oldPrice ? `<span class="badge badge--red">-${Math.round((1 - p.price / p.oldPrice) * 100)}%</span>` : ""}
       </div>
       <div class="variant-selector">
         <div class="variant-selector__label">Dung tích</div>
         <div class="variant-options">
-          <button class="variant-btn active">750ml</button>
-          <button class="variant-btn">1.5L Magnum</button>
-          <button class="variant-btn">Thùng 6 chai</button>
+          <button class="variant-btn active" data-mult="1">750ml</button>
+          <button class="variant-btn" data-mult="2">1.5L Magnum</button>
+          <button class="variant-btn" data-mult="6">Thùng 6 chai</button>
         </div>
       </div>
       <div class="qty-selector">
@@ -764,7 +1330,7 @@ function renderProductDetail(id) {
       <div style="display:flex;gap:.75rem;margin-bottom:1.5rem;flex-wrap:wrap">
         <button class="btn btn--primary btn--lg" style="flex:1;min-width:180px" onclick="addToCart(${p.id},+document.getElementById('qtyVal').textContent)">🛒 Thêm vào giỏ hàng</button>
         <button class="btn btn--outline" onclick="toggleWishlist(${p.id},this)">
-          ${state.wishlist.includes(p.id) ? '♥ Đã yêu thích' : '♡ Yêu thích'}
+          ${state.wishlist.includes(p.id) ? "♥ Đã yêu thích" : "♡ Yêu thích"}
         </button>
       </div>
       <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:2rem">
@@ -793,7 +1359,7 @@ function renderProductDetail(id) {
       </div>
       <div class="tab-content" id="tab-pairing">
         <div style="display:flex;flex-wrap:wrap;gap:.5rem">
-          ${p.food.map(f => `<span class="badge badge--gold" style="font-size:.85rem;padding:.4rem .9rem">🍽 ${f}</span>`).join('')}
+          ${p.food.map((f) => `<span class="badge badge--gold" style="font-size:.85rem;padding:.4rem .9rem">🍽 ${f}</span>`).join("")}
         </div>
       </div>
       <div class="tab-content" id="tab-delivery">
@@ -811,57 +1377,96 @@ function renderProductDetail(id) {
     </div>
   </div>`;
 
-    // Qty controls
-    let qty = 1;
-    document.getElementById('qtyMinus')?.addEventListener('click', () => { if (qty > 1) { qty--; document.getElementById('qtyVal').textContent = qty; } });
-    document.getElementById('qtyPlus')?.addEventListener('click', () => { if (qty < p.stock) { qty++; document.getElementById('qtyVal').textContent = qty; } });
-
-    // Tabs
-    container.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        container.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        container.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById(`tab-${btn.dataset.tab}`)?.classList.add('active');
+      // Qty controls
+      let qty = 1;
+      document.getElementById("qtyMinus")?.addEventListener("click", () => {
+        if (qty > 1) {
+          qty--;
+          document.getElementById("qtyVal").textContent = qty;
+        }
       });
-    });
-    // Variant buttons
-    container.querySelectorAll('.variant-btn').forEach(btn => {
-      btn.addEventListener('click', () => { container.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); });
-    });
-  }); // đóng apiPromise.catch(...).then(p => { ... })
+      document.getElementById("qtyPlus")?.addEventListener("click", () => {
+        if (qty < p.stock) {
+          qty++;
+          document.getElementById("qtyVal").textContent = qty;
+        }
+      });
+
+      // Tabs
+      container.querySelectorAll(".tab-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          container
+            .querySelectorAll(".tab-btn")
+            .forEach((b) => b.classList.remove("active"));
+          container
+            .querySelectorAll(".tab-content")
+            .forEach((c) => c.classList.remove("active"));
+          btn.classList.add("active");
+          document
+            .getElementById(`tab-${btn.dataset.tab}`)
+            ?.classList.add("active");
+        });
+      });
+      // Variant buttons
+      container.querySelectorAll(".variant-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          container
+            .querySelectorAll(".variant-btn")
+            .forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          const mult = parseFloat(btn.dataset.mult || 1);
+          const priceMain = container.querySelector(".price-main");
+          if (priceMain) priceMain.textContent = formatPrice(p.price * mult);
+          const priceOld = container.querySelector(".price-old");
+          if (priceOld && p.oldPrice)
+            priceOld.textContent = formatPrice(p.oldPrice * mult);
+        });
+      });
+    }); // đóng apiPromise.catch(...).then(p => { ... })
 }
 
 window.switchThumb = (el, src) => {
-  document.querySelectorAll('.gallery-thumb').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  const main = document.getElementById('galleryMain');
+  document
+    .querySelectorAll(".gallery-thumb")
+    .forEach((t) => t.classList.remove("active"));
+  el.classList.add("active");
+  const main = document.getElementById("galleryMain");
   if (main) main.src = src;
 };
 window.toggleWishlist = async (id, btn) => {
-  const token = localStorage.getItem('vinova_token');
-  const hasApi = token && typeof window.VINOVA_API !== 'undefined';
+  const token = localStorage.getItem("vinova_token");
+  const hasApi = token && typeof window.VINOVA_API !== "undefined";
 
   if (state.wishlist.includes(id)) {
     if (hasApi) {
       try {
         await window.VINOVA_API.users.removeWishlist(id);
         state.wishlist.splice(state.wishlist.indexOf(id), 1);
-        btn.textContent = '♡ Yêu thích'; showToast('Đã xóa khỏi yêu thích', 'info');
-      } catch (err) { showToast(err.message, 'error'); }
+        btn.textContent = "♡ Yêu thích";
+        showToast("Đã xóa khỏi yêu thích", "info");
+      } catch (err) {
+        showToast(err.message, "error");
+      }
       return;
     }
     state.wishlist.splice(state.wishlist.indexOf(id), 1);
-    btn.textContent = '♡ Yêu thích'; showToast('Đã xóa khỏi yêu thích', 'info');
+    btn.textContent = "♡ Yêu thích";
+    showToast("Đã xóa khỏi yêu thích", "info");
   } else {
     if (hasApi) {
       try {
         await window.VINOVA_API.users.addWishlist(id);
-        state.wishlist.push(id); btn.textContent = '♥ Đã yêu thích'; showToast('Đã thêm vào yêu thích 💛', 'success');
-      } catch (err) { showToast(err.message, 'error'); }
+        state.wishlist.push(id);
+        btn.textContent = "♥ Đã yêu thích";
+        showToast("Đã thêm vào yêu thích 💛", "success");
+      } catch (err) {
+        showToast(err.message, "error");
+      }
       return;
     }
-    state.wishlist.push(id); btn.textContent = '♥ Đã yêu thích'; showToast('Đã thêm vào yêu thích 💛', 'success');
+    state.wishlist.push(id);
+    btn.textContent = "♥ Đã yêu thích";
+    showToast("Đã thêm vào yêu thích 💛", "success");
   }
   saveState();
 };
@@ -869,75 +1474,126 @@ window.toggleWishlist = async (id, btn) => {
 function generateReviewsHTML(p) {
   let reviews = [];
   if (p.reviews_list && p.reviews_list.length > 0) {
-    reviews = p.reviews_list.map(r => ({
-      name: r.full_name || 'Khách hàng',
+    reviews = p.reviews_list.map((r) => ({
+      name: r.full_name || "Khách hàng",
       rating: r.rating,
-      comment: r.comment || '',
-      date: new Date(r.created_at).toLocaleDateString('vi-VN')
+      comment: r.comment || "",
+      date: new Date(r.created_at).toLocaleDateString("vi-VN"),
     }));
   } else {
     // Static fallback
     reviews = [
-      { name: 'Nguyễn Văn A', rating: 5, comment: 'Rượu tuyệt vời, hương vị phức hợp và dư vị rất dài. Sẽ mua lại!', date: '15/01/2025' },
-      { name: 'Trần Thị B', rating: 5, comment: 'Đóng gói cẩn thận, giao hàng đúng nhiệt độ. Món quà hoàn hảo cho sếp!', date: '12/01/2025' },
-      { name: 'Lê Minh C', rating: 4, comment: 'Chất lượng xứng đáng với giá tiền. Khá cao cấp.', date: '08/01/2025' },
+      {
+        name: "Nguyễn Văn A",
+        rating: 5,
+        comment:
+          "Rượu tuyệt vời, hương vị phức hợp và dư vị rất dài. Sẽ mua lại!",
+        date: "15/01/2025",
+      },
+      {
+        name: "Trần Thị B",
+        rating: 5,
+        comment:
+          "Đóng gói cẩn thận, giao hàng đúng nhiệt độ. Món quà hoàn hảo cho sếp!",
+        date: "12/01/2025",
+      },
+      {
+        name: "Lê Minh C",
+        rating: 4,
+        comment: "Chất lượng xứng đáng với giá tiền. Khá cao cấp.",
+        date: "08/01/2025",
+      },
     ];
   }
   return `<div style="display:flex;flex-direction:column;gap:1.25rem">
-    ${reviews.map(r => `<div style="padding:1rem;background:var(--c-surface2);border-radius:var(--radius-sm)">
+    ${reviews
+      .map(
+        (
+          r,
+        ) => `<div style="padding:1rem;background:var(--c-surface2);border-radius:var(--radius-sm)">
       <div style="display:flex;justify-content:space-between;margin-bottom:.4rem">
         <strong>${r.name}</strong><span style="color:var(--c-muted);font-size:.8rem">${r.date}</span>
       </div>
-      <div style="color:var(--c-gold);margin-bottom:.4rem">${'★'.repeat(r.rating)}</div>
+      <div style="color:var(--c-gold);margin-bottom:.4rem">${"★".repeat(r.rating)}</div>
       <div style="font-size:.9rem;color:var(--c-muted)">${r.comment}</div>
-    </div>`).join('')}
+    </div>`,
+      )
+      .join("")}
   </div>`;
 }
 
 // ─── CART ─────────────────────────────────────────────────────
 function addToCart(id, qty = 1) {
-  const p = PRODUCTS.find(x => x.id === id) || { id, name: 'Sản phẩm', stock: 99, price: 0, img: '', volume: '750ml' };
-  const token = localStorage.getItem('vinova_token');
-  if (token && typeof window.VINOVA_API !== 'undefined') {
-    window.VINOVA_API.cart.add(id, qty)
-      .then(() => {
-        showToast(`Đã thêm vào giỏ hàng! 🛒`, 'success');
-        updateCartBadge();
-        if (state.page === 'cart') renderCart();
-        if (typeof window.trackAddToCart === 'function') window.trackAddToCart(p, qty);
+  const p = PRODUCTS.find((x) => x.id === id) || {
+    id,
+    name: "Sản phẩm",
+    stock: 99,
+    price: 0,
+    img: "",
+    volume: "750ml",
+  };
+  const token = localStorage.getItem("vinova_token");
+  if (token && typeof window.VINOVA_API !== "undefined") {
+    window.VINOVA_API.cart
+      .add(id, qty)
+      .then(async () => {
+        showToast(`Đã thêm vào giỏ hàng! 🛒`, "success");
+        try {
+          const res = await window.VINOVA_API.cart.get();
+          state.cart = res.items || [];
+          updateCartBadge();
+          if (state.page === "cart") renderCart();
+        } catch (e) {
+          console.error("[Cart Sync] Error:", e);
+        }
+        if (typeof window.trackAddToCart === "function")
+          window.trackAddToCart(p, qty);
       })
-      .catch(err => showToast(err.message || 'Không thể thêm vào giỏ hàng', 'error'));
+      .catch((err) =>
+        showToast(err.message || "Không thể thêm vào giỏ hàng", "error"),
+      );
     return;
   }
   // Guest fallback → localStorage
-  const existing = state.cart.find(i => i.id === id);
+  const existing = state.cart.find((i) => i.id === id);
   if (existing) existing.qty = Math.min(existing.qty + qty, p.stock);
-  else state.cart.push({ id, productId: id, qty, name: p.name, price: p.price, img: p.img, volume: p.volume });
-  saveState(); updateCartBadge();
-  showToast(`Đã thêm ${p.name} vào giỏ hàng`, 'success');
-  if (typeof window.trackAddToCart === 'function') window.trackAddToCart(p, qty);
-  if (state.page === 'cart') renderCart();
+  else
+    state.cart.push({
+      id,
+      productId: id,
+      qty,
+      name: p.name,
+      price: p.price,
+      img: p.img,
+      volume: p.volume,
+    });
+  saveState();
+  updateCartBadge();
+  showToast(`Đã thêm ${p.name} vào giỏ hàng`, "success");
+  if (typeof window.trackAddToCart === "function")
+    window.trackAddToCart(p, qty);
+  if (state.page === "cart") renderCart();
 }
 
-
-function renderCart() {
-  const container = document.getElementById('cartItems');
-  const emptyMsg = document.getElementById('cartEmpty');
+window.renderCart = function () {
+  const container = document.getElementById("cartItems");
+  const emptyMsg = document.getElementById("cartEmpty");
   if (!container) return;
   if (state.cart.length === 0) {
-    container.innerHTML = '';
-    if (emptyMsg) emptyMsg.style.display = 'block';
+    container.innerHTML = "";
+    if (emptyMsg) emptyMsg.style.display = "block";
     updateOrderSummary();
     return;
   }
-  if (emptyMsg) emptyMsg.style.display = 'none';
-  container.innerHTML = state.cart.map(item => {
-    const p = PRODUCTS.find(x => x.id === item.id);
-    return `<div class="cart-item" data-cart-id="${item.id}">
+  if (emptyMsg) emptyMsg.style.display = "none";
+  container.innerHTML = state.cart
+    .map((item) => {
+      const p = PRODUCTS.find((x) => x.id === item.id);
+      return `<div class="cart-item" data-cart-id="${item.id}">
       <img class="cart-item__img" src="${item.img}" alt="${item.name}" onerror="this.src='images/placeholder.jpg'">
       <div class="cart-item__info">
         <div class="cart-item__name">${item.name}</div>
-        <div class="cart-item__meta">${item.volume} · ${getFlag(p?.region)}${p?.region || ''}</div>
+        <div class="cart-item__meta">${item.volume} · ${getFlag(p?.region)}${p?.region || ""}</div>
         <div class="cart-item__actions">
           <button class="qty-btn" onclick="changeCartQty(${item.id},-1)">−</button>
           <span class="qty-value">${item.qty}</span>
@@ -947,63 +1603,107 @@ function renderCart() {
       </div>
       <div class="cart-item__price">${formatPrice(item.price * item.qty)}</div>
     </div>`;
-  }).join('');
+    })
+    .join("");
   updateOrderSummary();
-}
+};
+const renderCart = window.renderCart;
 
 window.changeCartQty = async (id, delta) => {
-  const item = state.cart.find(i => i.id === id);
+  const item = state.cart.find((i) => i.id === id);
   if (!item) return;
   const newQty = Math.max(1, item.qty + delta);
 
-  const token = localStorage.getItem('vinova_token');
-  if (token && typeof window.VINOVA_API !== 'undefined') {
+  const token = localStorage.getItem("vinova_token");
+  if (token && typeof window.VINOVA_API !== "undefined") {
     try {
       await window.VINOVA_API.cart.update(id, newQty);
       item.qty = newQty;
       renderCart();
       updateCartBadge();
     } catch (err) {
-      showToast(err.message || 'Không thể cập nhật số lượng', 'error');
+      showToast(err.message || "Không thể cập nhật số lượng", "error");
     }
     return;
   }
 
   item.qty = newQty;
-  saveState(); renderCart();
+  saveState();
+  renderCart();
 };
 window.removeFromCart = async (id) => {
-  const token = localStorage.getItem('vinova_token');
-  if (token && typeof window.VINOVA_API !== 'undefined') {
+  const token = localStorage.getItem("vinova_token");
+  if (token && typeof window.VINOVA_API !== "undefined") {
     try {
       await window.VINOVA_API.cart.remove(id);
-      state.cart = state.cart.filter(i => i.id !== id);
+      state.cart = state.cart.filter((i) => i.id !== id);
       renderCart();
       updateCartBadge();
-      showToast('Đã xóa sản phẩm khỏi giỏ hàng', 'info');
+      showToast("Đã xóa sản phẩm khỏi giỏ hàng", "info");
     } catch (err) {
-      showToast(err.message || 'Không thể xóa sản phẩm', 'error');
+      showToast(err.message || "Không thể xóa sản phẩm", "error");
     }
     return;
   }
 
-  state.cart = state.cart.filter(i => i.id !== id);
-  saveState(); updateCartBadge(); renderCart();
-  showToast('Đã xóa sản phẩm khỏi giỏ hàng', 'info');
+  state.cart = state.cart.filter((i) => i.id !== id);
+  saveState();
+  updateCartBadge();
+  renderCart();
+  showToast("Đã xóa sản phẩm khỏi giỏ hàng", "info");
 };
 
-function cartTotal() { return state.cart.reduce((s, i) => s + i.price * i.qty, 0); }
+function cartTotal() {
+  return state.cart.reduce((s, i) => s + i.price * i.qty, 0);
+}
 
 function updateOrderSummary() {
   const subtotal = cartTotal();
-  const shipping = subtotal > 5000000 ? 0 : 50000;
-  const tax = Math.round(subtotal * 0.1);
-  const total = subtotal + shipping + tax;
-  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-  set('summarySubtotal', formatPrice(subtotal));
-  set('summaryShipping', shipping === 0 ? 'Miễn phí' : formatPrice(shipping));
-  set('summaryTax', formatPrice(tax));
-  set('summaryTotal', formatPrice(total));
+  const discount = state.appliedPromo
+    ? Math.round(subtotal * (state.appliedPromo.discount / 100))
+    : 0;
+
+  // Dynamic Shipping calculation
+  const shippingType =
+    document.querySelector('input[name="shipping"]:checked')?.value ||
+    "express";
+  let shipping = 0;
+  if (shippingType === "express") shipping = 50000;
+  else if (shippingType === "standard") shipping = 30000;
+  else if (shippingType === "free") shipping = subtotal >= 5000000 ? 0 : 30000;
+
+  // Gift Wrap fee
+  const giftWrapSelected = document.getElementById("giftWrap")?.checked;
+  const giftFee = giftWrapSelected ? 50000 : 0;
+
+  const tax = Math.round((subtotal - discount + giftFee) * 0.1);
+  const total = subtotal - discount + shipping + tax + giftFee;
+
+  const set = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  };
+  set("summarySubtotal", formatPrice(subtotal));
+
+  const discEl = document.getElementById("discountLine");
+  if (discEl) discEl.style.display = discount > 0 ? "flex" : "none";
+  set("summaryDiscount", discount > 0 ? `-${formatPrice(discount)}` : "0₫");
+
+  const discEl2 = document.getElementById("discountLine2");
+  if (discEl2) discEl2.style.display = discount > 0 ? "flex" : "none";
+  set("summaryDiscount2", discount > 0 ? `-${formatPrice(discount)}` : "0₫");
+
+  const giftEl = document.getElementById("giftFeeLine");
+  if (giftEl) giftEl.style.display = giftFee > 0 ? "flex" : "none";
+  set("summaryGift", formatPrice(giftFee));
+
+  const giftEl2 = document.getElementById("giftFeeLine2");
+  if (giftEl2) giftEl2.style.display = giftFee > 0 ? "flex" : "none";
+  set("summaryGift2", formatPrice(giftFee));
+
+  set("summaryShipping", shipping === 0 ? "Miễn phí" : formatPrice(shipping));
+  set("summaryTax", formatPrice(tax));
+  set("summaryTotal", formatPrice(total));
 }
 
 // ─── CHECKOUT ─────────────────────────────────────────────────
@@ -1014,83 +1714,132 @@ function renderCheckout() {
 
 function goToCheckoutStep(step) {
   state.checkoutStep = step;
-  document.querySelectorAll('.checkout-step').forEach((s, i) => {
-    s.classList.remove('active', 'done');
-    if (i + 1 < step) s.classList.add('done');
-    else if (i + 1 === step) s.classList.add('active');
+  document.querySelectorAll(".checkout-step").forEach((s, i) => {
+    s.classList.remove("active", "done");
+    if (i + 1 < step) s.classList.add("done");
+    else if (i + 1 === step) s.classList.add("active");
   });
-  document.querySelectorAll('.checkout-panel').forEach((p, i) => {
-    p.classList.toggle('active', i + 1 === step);
+  document.querySelectorAll(".checkout-panel").forEach((p, i) => {
+    p.classList.toggle("active", i + 1 === step);
   });
 }
 
 window.nextCheckoutStep = () => {
   if (state.checkoutStep < 4) goToCheckoutStep(state.checkoutStep + 1);
-  if (state.checkoutStep === 4) { completeOrder(); }
+  if (state.checkoutStep === 4) {
+    completeOrder();
+  }
 };
-window.prevCheckoutStep = () => { if (state.checkoutStep > 1) goToCheckoutStep(state.checkoutStep - 1); };
+window.prevCheckoutStep = () => {
+  if (state.checkoutStep > 1) goToCheckoutStep(state.checkoutStep - 1);
+};
 
 async function completeOrder() {
   const total = cartTotal();
-  const token = localStorage.getItem('vinova_token');
+  const token = localStorage.getItem("vinova_token");
 
-  if (token && typeof window.VINOVA_API !== 'undefined' && state.cart.length > 0) {
-    const items = state.cart.map(i => ({
+  if (
+    token &&
+    typeof window.VINOVA_API !== "undefined" &&
+    state.cart.length > 0
+  ) {
+    const items = state.cart.map((i) => ({
       productId: i.id || i.product_id || i.productId,
-      name: i.name, qty: i.qty, price: i.price, img: i.img, volume: i.volume || '750ml'
+      name: i.name,
+      qty: i.qty,
+      price: i.price,
+      img: i.img,
+      volume: i.volume || "750ml",
     }));
     const address = {
-      name: document.getElementById('checkoutName')?.value || state.user?.full_name || 'Khách hàng',
-      phone: document.getElementById('checkoutPhone')?.value || '0900000000',
-      street: document.getElementById('checkoutAddress')?.value || '123 Đường ABC',
-      district: document.getElementById('checkoutDistrict')?.value || 'Quận 1',
-      city: document.getElementById('checkoutCity')?.value || 'TP. Hồ Chí Minh',
+      name:
+        document.getElementById("checkoutName")?.value ||
+        state.user?.full_name ||
+        "Khách hàng",
+      phone: document.getElementById("checkoutPhone")?.value || "0900000000",
+      street:
+        document.getElementById("checkoutAddress")?.value || "123 Đường ABC",
+      district: document.getElementById("checkoutDistrict")?.value || "Quận 1",
+      city: document.getElementById("checkoutCity")?.value || "TP. Hồ Chí Minh",
     };
-    const paymentMethod = document.querySelector('input[name="payment"]:checked')?.value || 'cod';
-    const shippingMethod = document.querySelector('input[name="shipping"]:checked')?.value || 'standard';
-    const giftWrap = document.getElementById('giftWrap')?.checked || false;
+    const paymentMethod =
+      document.querySelector('input[name="payment"]:checked')?.value || "cod";
+    const shippingMethod =
+      document.querySelector('input[name="shipping"]:checked')?.value ||
+      "standard";
+    const giftWrap = document.getElementById("giftWrap")?.checked || false;
     try {
-      showToast('Đang tạo đơn hàng...', 'info');
+      showToast("Đang tạo đơn hàng...", "info");
       const orderRes = await window.VINOVA_API.orders.create({
-        items, address, paymentMethod, shippingMethod, giftWrap,
-        total, shippingFee: total > 5000000 ? 0 : 50000, tax: Math.round(total * 0.1),
+        items,
+        address,
+        paymentMethod,
+        shippingMethod,
+        giftWrap,
+        total,
+        shippingFee: total > 5000000 ? 0 : 50000,
+        tax: Math.round(total * 0.1),
       });
       const orderId = orderRes.order_id;
-      if (typeof window.trackPurchase === 'function') window.trackPurchase(orderId, total, items);
-      if (paymentMethod === 'vnpay') {
+      if (typeof window.trackPurchase === "function")
+        window.trackPurchase(orderId, total, items);
+      if (paymentMethod === "vnpay") {
         const r = await window.VINOVA_API.payments.vnpay(orderId);
-        if (r.payment_url) { window.location.href = r.payment_url; return; }
-      } else if (paymentMethod === 'momo') {
+        if (r.payment_url) {
+          window.location.href = r.payment_url;
+          return;
+        }
+      } else if (paymentMethod === "momo") {
         const r = await window.VINOVA_API.payments.momo(orderId);
-        if (r.payment_url) { window.location.href = r.payment_url; return; }
+        if (r.payment_url) {
+          window.location.href = r.payment_url;
+          return;
+        }
       }
-      state.cart = []; saveState(); updateCartBadge();
+      state.cart = [];
+      saveState();
+      updateCartBadge();
       goToCheckoutStep(4);
-      const el = document.getElementById('orderConfirmId');
+      const el = document.getElementById("orderConfirmId");
       if (el) el.textContent = `#${orderId}`;
-      showToast('🎉 Đơn hàng đã đặt thành công!', 'success', 5000);
+      showToast("🎉 Đơn hàng đã đặt thành công!", "success", 5000);
       return;
     } catch (err) {
-      showToast(err.message || 'Lỗi đặt hàng, vui lòng thử lại', 'error');
+      showToast(err.message || "Lỗi đặt hàng, vui lòng thử lại", "error");
       return;
     }
   }
 
   // Guest fallback
   const orderId = `VNV-${Date.now()}`;
-  const items = state.cart.map(i => ({ id: i.id, name: i.name, qty: i.qty, price: i.price }));
-  if (typeof window.trackPurchase === 'function') window.trackPurchase(orderId, total, items);
-  if (typeof window.saveOrderToFirestore === 'function') window.saveOrderToFirestore({ orderId, total, items, currency: state.currency, user: 'guest' });
-  state.cart = []; saveState(); updateCartBadge();
+  const items = state.cart.map((i) => ({
+    id: i.id,
+    name: i.name,
+    qty: i.qty,
+    price: i.price,
+  }));
+  if (typeof window.trackPurchase === "function")
+    window.trackPurchase(orderId, total, items);
+  if (typeof window.saveOrderToFirestore === "function")
+    window.saveOrderToFirestore({
+      orderId,
+      total,
+      items,
+      currency: state.currency,
+      user: "guest",
+    });
+  state.cart = [];
+  saveState();
+  updateCartBadge();
   goToCheckoutStep(4);
-  showToast('🎉 Đơn hàng đã được đặt thành công!', 'success', 5000);
+  showToast("🎉 Đơn hàng đã được đặt thành công!", "success", 5000);
 }
-
 
 // ─── ACCOUNT ──────────────────────────────────────────────────
 function renderAccount() {
-  const user = state.user || JSON.parse(localStorage.getItem('vinova_user') || 'null');
-  const container = document.getElementById('accountContent');
+  const user =
+    state.user || JSON.parse(localStorage.getItem("vinova_user") || "null");
+  const container = document.getElementById("accountContent");
   if (!container) return;
   if (!user) {
     container.innerHTML = `<div style="text-align:center;padding:3rem">
@@ -1101,24 +1850,30 @@ function renderAccount() {
     return;
   }
 
-  if (typeof window.VINOVA_API !== 'undefined') {
-    window.VINOVA_API.users.profile().then(data => {
-      if (data.user) {
-        Object.assign(user, data.user);
-        state.user = user;
-        localStorage.setItem('vinova_user', JSON.stringify(user));
-        renderAccountInfo(user, container);
-      }
-    }).catch(() => renderAccountInfo(user, container));
+  if (typeof window.VINOVA_API !== "undefined") {
+    window.VINOVA_API.users
+      .profile()
+      .then((data) => {
+        if (data.user) {
+          Object.assign(user, data.user);
+          state.user = user;
+          localStorage.setItem("vinova_user", JSON.stringify(user));
+          renderAccountInfo(user, container);
+        }
+      })
+      .catch(() => renderAccountInfo(user, container));
   } else {
     renderAccountInfo(user, container);
   }
 }
 
 function renderAccountInfo(user, container) {
-  const tierValue = user.tier || 'Silver';
-  const tierColor = { silver: '#aaa', gold: '#c9a84c', platinum: '#5ce8e8' }[tierValue.toLowerCase()] || '#aaa';
-  const displayPoints = (user.points || 0).toLocaleString('vi-VN');
+  const tierValue = user.tier || "Silver";
+  const tierColor =
+    { silver: "#aaa", gold: "#c9a84c", platinum: "#5ce8e8" }[
+      tierValue.toLowerCase()
+    ] || "#aaa";
+  const displayPoints = (user.points || 0).toLocaleString("vi-VN");
 
   container.innerHTML = `
     <div style="display:grid;grid-template-columns:260px 1fr;gap:2rem;align-items:start">
@@ -1127,20 +1882,20 @@ function renderAccountInfo(user, container) {
         <div class="card__body" style="text-align:center;padding:2rem">
           <div
             style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--c-gold),var(--c-red-wine));display:flex;align-items:center;justify-content:center;font-size:2rem;margin:0 auto 1rem;color:#fff;font-weight:700">
-            ${(user.full_name || '?')[0].toUpperCase()}</div>
-          <div style="font-weight:600;font-size:1.05rem">${user.full_name || 'Khách hàng'}</div>
-          <div style="font-size:.82rem;color:var(--c-muted)">${user.email || ''}</div>
+            ${(user.full_name || "?")[0].toUpperCase()}</div>
+          <div style="font-weight:600;font-size:1.05rem">${user.full_name || "Khách hàng"}</div>
+          <div style="font-size:.82rem;color:var(--c-muted)">${user.email || ""}</div>
           <div style="margin:.75rem 0"><span style="color:${tierColor};padding:.2rem .65rem;border-radius:999px;border:1px solid ${tierColor}50;font-size:.72rem;font-weight:600;text-transform:uppercase;background:${tierColor}15">★ Thành viên ${tierValue}</span></div>
           <div style="font-size:.8rem;color:var(--c-muted)">Điểm tích lũy: <strong style="color:var(--c-gold)">${displayPoints} points</strong></div>
         </div>
         <div class="card__footer" style="display:flex;flex-direction:column;gap:0" id="accountSidebar">
-          <button class="admin-nav-item active" data-section="orders">📋 Đơn hàng của tôi</button>
-          <button class="admin-nav-item" data-section="wishlist">♡ Danh sách yêu thích</button>
-          <button class="admin-nav-item" data-section="address">📍 Địa chỉ giao hàng</button>
-          <button class="admin-nav-item" data-section="notifications">🔔 Thông báo</button>
-          <button class="admin-nav-item" onclick="navigate('wine-club')">★ Wine Club</button>
-          <button class="admin-nav-item" data-section="settings">⚙ Cài đặt tài khoản</button>
-          <button class="admin-nav-item" style="color:var(--c-error)" onclick="window.closeLoginModal();window.dispatchEvent(new CustomEvent('auth:logout'));">→ Đăng xuất</button>
+          <button class="admin-sidebar-btn active" data-section="orders">📋 Đơn hàng của tôi</button>
+          <button class="admin-sidebar-btn" data-section="wishlist">♡ Danh sách yêu thích</button>
+          <button class="admin-sidebar-btn" data-section="address">📍 Địa chỉ giao hàng</button>
+          <button class="admin-sidebar-btn" data-section="notifications">🔔 Thông báo</button>
+          <button class="admin-sidebar-btn" onclick="navigate('wine-club')">★ Wine Club</button>
+          <button class="admin-sidebar-btn" data-section="settings">⚙ Cài đặt tài khoản</button>
+          <button class="admin-sidebar-btn" style="color:var(--c-error)" onclick="window.closeLoginModal();window.dispatchEvent(new CustomEvent('auth:logout'));">→ Đăng xuất</button>
         </div>
       </div>
       <!-- Content -->
@@ -1164,7 +1919,7 @@ function renderAccountInfo(user, container) {
            <div style="padding:1.5rem;background:var(--c-surface1);border-radius:var(--radius);border:1px solid var(--c-border)">
              <div style="display:flex;justify-content:space-between;margin-bottom:1rem">
                 <div>
-                  <div style="font-weight:600">${user.full_name || 'Khách hàng'} <span class="badge badge--green" style="margin-left:.5rem">Mặc định</span></div>
+                  <div style="font-weight:600">${user.full_name || "Khách hàng"} <span class="badge badge--green" style="margin-left:.5rem">Mặc định</span></div>
                   <div style="font-size:.85rem;color:var(--c-muted);margin-top:.4rem">0912 345 678</div>
                   <div style="font-size:.85rem;color:var(--c-muted);margin-top:.2rem">123 Nguyễn Văn Linh, Quận 7, TP. Hồ Chí Minh</div>
                 </div>
@@ -1188,7 +1943,7 @@ function renderAccountInfo(user, container) {
             <div class="input-row">
               <div class="input-group">
                  <label>Họ và tên</label>
-                 <input class="input" value="${user.full_name || ''}">
+                 <input class="input" value="${user.full_name || ""}">
               </div>
               <div class="input-group">
                  <label>Số điện thoại</label>
@@ -1197,7 +1952,7 @@ function renderAccountInfo(user, container) {
             </div>
             <div class="input-group">
                <label>Email</label>
-               <input class="input" value="${user.email || ''}" disabled style="opacity:0.7">
+               <input class="input" value="${user.email || ""}" disabled style="opacity:0.7">
                <div style="font-size:.75rem;color:var(--c-muted);margin-top:.4rem">Email không thể thay đổi sau khi đăng ký.</div>
             </div>
             <button class="btn btn--primary" style="align-self:flex-start" onclick="showToast('Đã lưu thay đổi thông tin!','success')">Lưu thay đổi</button>
@@ -1207,61 +1962,98 @@ function renderAccountInfo(user, container) {
     </div>`;
 
   // Attach event listeners for tabs
-  const sidebarButtons = document.querySelectorAll('#accountSidebar .admin-nav-item[data-section]');
-  sidebarButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      sidebarButtons.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const sectionId = 'account-' + btn.dataset.section;
-      document.querySelectorAll('#accountContentArea .account-section').forEach(sec => {
-        sec.classList.toggle('hidden', sec.id !== sectionId);
-      });
+  const sidebarButtons = document.querySelectorAll(
+    "#accountSidebar .admin-sidebar-btn[data-section]",
+  );
+  sidebarButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      sidebarButtons.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      const sectionId = "account-" + btn.dataset.section;
+      document
+        .querySelectorAll("#accountContentArea .account-section")
+        .forEach((sec) => {
+          sec.classList.toggle("hidden", sec.id !== sectionId);
+        });
     });
   });
 
-  if (typeof window.VINOVA_API !== 'undefined') {
-    window.VINOVA_API.orders.list().then(data => {
-      const orders = data.orders || [];
-      const el = document.getElementById('orderHistorySection');
-      if (!el) return;
-      if (!orders.length) { el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--c-muted)">Chưa có đơn hàng nào</div>'; return; }
-      const sLabel = { pending: 'Chờ xác nhận', confirmed: 'Đã xác nhận', shipping: 'Đang giao', completed: 'Hoàn thành', cancelled: 'Đã hủy' };
-      const sColor = { pending: '#f39c12', confirmed: '#3498db', shipping: '#9b59b6', completed: '#27ae60', cancelled: '#e74c3c' };
-      el.innerHTML = orders.map(o => `<div style="padding:1.25rem;background:var(--c-surface1);border-radius:var(--radius-sm);border:1px solid var(--c-border);margin-bottom:.75rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem">
-          <div><div style="font-weight:600;font-size:1.1rem">#${o.id} <span style="font-size:.8rem;color:var(--c-muted);font-weight:400;margin-left:.75rem">· ${new Date(o.created_at).toLocaleDateString('vi-VN')}</span></div>
-          <div style="font-size:.85rem;color:var(--c-muted);margin-top:.4rem">${o.item_names || 'Sản phẩm rượu vang cao cấp'}</div></div>
-          <div style="text-align:right"><div style="font-weight:700;color:var(--c-gold);font-size:1.1rem">${(o.total || 0).toLocaleString('vi-VN')}₫</div>
+  if (typeof window.VINOVA_API !== "undefined") {
+    window.VINOVA_API.orders
+      .list()
+      .then((data) => {
+        const orders = data.orders || [];
+        const el = document.getElementById("orderHistorySection");
+        if (!el) return;
+        if (!orders.length) {
+          el.innerHTML =
+            '<div style="text-align:center;padding:2rem;color:var(--c-muted)">Chưa có đơn hàng nào</div>';
+          return;
+        }
+        const sLabel = {
+          pending: "Chờ xác nhận",
+          confirmed: "Đã xác nhận",
+          shipping: "Đang giao",
+          completed: "Hoàn thành",
+          cancelled: "Đã hủy",
+        };
+        const sColor = {
+          pending: "#f39c12",
+          confirmed: "#3498db",
+          shipping: "#9b59b6",
+          completed: "#27ae60",
+          cancelled: "#e74c3c",
+        };
+        el.innerHTML = orders
+          .map(
+            (
+              o,
+            ) => `<div style="padding:1.25rem;background:var(--c-surface1);border-radius:var(--radius-sm);border:1px solid var(--c-border);margin-bottom:.75rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem">
+          <div><div style="font-weight:600;font-size:1.1rem">#${o.id} <span style="font-size:.8rem;color:var(--c-muted);font-weight:400;margin-left:.75rem">· ${new Date(o.created_at).toLocaleDateString("vi-VN")}</span></div>
+          <div style="font-size:.85rem;color:var(--c-muted);margin-top:.4rem">${o.item_names || "Sản phẩm rượu vang cao cấp"}</div></div>
+          <div style="text-align:right"><div style="font-weight:700;color:var(--c-gold);font-size:1.1rem">${(o.total || 0).toLocaleString("vi-VN")}₫</div>
           <div style="font-size:.8rem;margin-top:.4rem;padding:.2rem .6rem;border-radius:99px;display:inline-block;background:${sColor[o.status]}15;color:${sColor[o.status]};font-weight:600">${sLabel[o.status] || o.status}</div></div>
-        </div>`).join('');
-    }).catch(() => {
-      const el = document.getElementById('orderHistorySection');
-      if (el) el.innerHTML = '<div style="color:var(--c-error);font-size:.85rem;padding:1rem;text-align:center">Không thể tải lịch sử đơn hàng. Hoặc hệ thống đang bảo trì.</div>';
-    });
+        </div>`,
+          )
+          .join("");
+      })
+      .catch(() => {
+        const el = document.getElementById("orderHistorySection");
+        if (el)
+          el.innerHTML =
+            '<div style="color:var(--c-error);font-size:.85rem;padding:1rem;text-align:center">Không thể tải lịch sử đơn hàng. Hoặc hệ thống đang bảo trì.</div>';
+      });
   }
 }
 
 function renderAdmin() {
   const sections = {
-    'dashboard': renderAdminDashboard,
-    'orders': renderAdminOrders,
-    'products-admin': renderAdminProducts,
-    'inventory': renderAdminInventory,
-    'customers': renderAdminCustomers,
-    'reports': renderAdminDashboard, // Re-use dashboard data
-    'promotions': renderPromosAdmin,
-    'settings': () => { } // TODO
+    dashboard: renderAdminDashboard,
+    orders: renderAdminOrders,
+    "products-admin": renderAdminProducts,
+    inventory: renderAdminInventory,
+    customers: renderAdminCustomers,
+    reports: renderAdminDashboard, // Re-use dashboard data
+    promotions: renderPromosAdmin,
+    settings: () => {}, // TODO
   };
 
-  document.querySelectorAll('.admin-nav-item').forEach(item => {
+  document.querySelectorAll(".admin-sidebar-btn").forEach((item) => {
     // Prevent duplicate listeners
     const newItem = item.cloneNode(true);
     item.parentNode.replaceChild(newItem, item);
 
-    newItem.addEventListener('click', () => {
-      document.querySelectorAll('.admin-nav-item').forEach(i => i.classList.remove('active'));
-      newItem.classList.add('active');
+    newItem.addEventListener("click", () => {
+      document
+        .querySelectorAll(".admin-sidebar-btn")
+        .forEach((i) => i.classList.remove("active"));
+      newItem.classList.add("active");
       const section = newItem.dataset.section;
-      document.querySelectorAll('.admin-section').forEach(s => s.classList.toggle('hidden', s.id !== `admin-${section}`));
+      document
+        .querySelectorAll(".admin-section")
+        .forEach((s) =>
+          s.classList.toggle("hidden", s.id !== `admin-${section}`),
+        );
 
       if (sections[section]) sections[section]();
     });
@@ -1272,148 +2064,257 @@ function renderAdmin() {
 }
 
 async function renderAdminDashboard() {
-  if (typeof window.VINOVA_API === 'undefined') return;
+  if (typeof window.VINOVA_API === "undefined") return;
   try {
     const data = await window.VINOVA_API.admin.dashboard();
-    const { kpi, type_breakdown, top_products, status_breakdown, monthly_revenue } = data;
+    const {
+      kpi,
+      type_breakdown,
+      top_products,
+      status_breakdown,
+      monthly_revenue,
+    } = data;
 
     // 1. Update KPIs
-    const elRev = document.getElementById('admin-kpi-revenue');
+    const elRev = document.getElementById("admin-kpi-revenue");
     if (elRev) elRev.textContent = formatPrice(kpi.revenue.value);
-    const elRevChange = document.getElementById('admin-kpi-revenue-change');
+    const elRevChange = document.getElementById("admin-kpi-revenue-change");
     if (elRevChange) {
-      elRevChange.textContent = `${kpi.revenue.change >= 0 ? '↑ +' : '↓ '}${kpi.revenue.change}%`;
-      elRevChange.className = `kpi-card__change ${kpi.revenue.change >= 0 ? 'up' : 'down'}`;
+      elRevChange.textContent = `${kpi.revenue.change >= 0 ? "↑ +" : "↓ "}${kpi.revenue.change}%`;
+      elRevChange.className = `kpi-card__change ${kpi.revenue.change >= 0 ? "up" : "down"}`;
     }
 
-    const elOrd = document.getElementById('admin-kpi-orders');
+    const elOrd = document.getElementById("admin-kpi-orders");
     if (elOrd) elOrd.textContent = kpi.orders.value;
-    const elOrdChange = document.getElementById('admin-kpi-orders-change');
+    const elOrdChange = document.getElementById("admin-kpi-orders-change");
     if (elOrdChange) {
-      elOrdChange.textContent = `${kpi.orders.change >= 0 ? '↑ +' : '↓ '}${kpi.orders.change}%`;
-      elOrdChange.className = `kpi-card__change ${kpi.orders.change >= 0 ? 'up' : 'down'}`;
+      elOrdChange.textContent = `${kpi.orders.change >= 0 ? "↑ +" : "↓ "}${kpi.orders.change}%`;
+      elOrdChange.className = `kpi-card__change ${kpi.orders.change >= 0 ? "up" : "down"}`;
     }
 
-    const elCus = document.getElementById('admin-kpi-customers');
+    const elCus = document.getElementById("admin-kpi-customers");
     if (elCus) elCus.textContent = kpi.new_customers.value;
 
-    const elAov = document.getElementById('admin-kpi-aov');
+    const elAov = document.getElementById("admin-kpi-aov");
     if (elAov) elAov.textContent = formatPrice(kpi.aov.value);
 
     // 2. Type breakdown
-    const typeContainer = document.getElementById('admin-type-breakdown');
+    const typeContainer = document.getElementById("admin-type-breakdown");
     if (typeContainer && type_breakdown.length > 0) {
       const totalRev = type_breakdown.reduce((sum, t) => sum + t.revenue, 0);
-      const colors = ['var(--c-red-wine)', 'var(--c-gold)', '#3b82f6', 'var(--c-success)'];
-      typeContainer.innerHTML = type_breakdown.map((t, i) => {
-        const pct = totalRev > 0 ? Math.round((t.revenue / totalRev) * 100) : 0;
-        return `
+      const colors = [
+        "var(--c-red-wine)",
+        "var(--c-gold)",
+        "#3b82f6",
+        "var(--c-success)",
+      ];
+      typeContainer.innerHTML = type_breakdown
+        .map((t, i) => {
+          const pct =
+            totalRev > 0 ? Math.round((t.revenue / totalRev) * 100) : 0;
+          return `
           <div>
             <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:.3rem">
-              <span>${t.type || 'Khác'}</span><span>${pct}%</span>
+              <span>${t.type || "Khác"}</span><span>${pct}%</span>
             </div>
             <div style="height:8px;background:var(--c-border);border-radius:4px">
               <div style="height:100%;width:${pct}%;background:${colors[i % colors.length]};border-radius:4px"></div>
             </div>
           </div>
         `;
-      }).join('');
+        })
+        .join("");
     }
 
-    // 3. Top products / Recent Orders 
+    // 3. Top products / Recent Orders
     // Usually we fetch admin.getOrders for recent but we will hook up getOrders to the specific page later.
     const ordersData = await window.VINOVA_API.orders.adminAll({ limit: 5 });
-    const tbody = document.getElementById('admin-recent-orders-tbody');
+    const tbody = document.getElementById("admin-recent-orders-tbody");
     if (tbody) {
-      tbody.innerHTML = ordersData.orders.map(o => `
+      tbody.innerHTML = ordersData.orders
+        .map(
+          (o) => `
         <tr>
           <td>#${o.id}</td>
-          <td>${o.full_name || o.email || 'Khách vãng lai'}</td>
+          <td>${o.full_name || o.email || "Khách vãng lai"}</td>
           <td>${new Date(o.created_at).toLocaleDateString()}</td>
           <td style="color:var(--c-gold-light)">${formatPrice(o.total)}</td>
-          <td><span class="status-dot ${o.status === 'completed' ? 'green' : o.status === 'cancelled' ? 'red' : 'yellow'}"></span>${o.status.toUpperCase()}</td>
+          <td><span class="status-dot ${o.status === "completed" ? "green" : o.status === "cancelled" ? "red" : "yellow"}"></span>${o.status.toUpperCase()}</td>
           <td><button class="btn btn--sm btn--outline" onclick="window.navigate('product-detail', {id: 1})">Chi tiết</button></td>
         </tr>
-      `).join('');
+      `,
+        )
+        .join("");
     }
 
     // 4. Chart
     if (monthly_revenue) {
-      const months = monthly_revenue.map(m => m.month).reverse();
-      const revenueVals = monthly_revenue.map(m => m.revenue).reverse();
+      const months = monthly_revenue.map((m) => m.month).reverse();
+      const revenueVals = monthly_revenue.map((m) => m.revenue).reverse();
       const maxVal = Math.max(...revenueVals, 1);
-      const chart = document.getElementById('revenueChart');
+      const chart = document.getElementById("revenueChart");
       if (chart) {
-        chart.innerHTML = `<div class="chart-bar-wrap">${months.map((m, i) => `
+        chart.innerHTML = `<div class="chart-bar-wrap">${months
+          .map(
+            (m, i) => `
            <div class="chart-bar-col">
              <div class="chart-bar" style="height:${(revenueVals[i] / maxVal) * 180}px;background:linear-gradient(to top,var(--c-red-wine),var(--c-gold))" title="${formatPrice(revenueVals[i])}"></div>
              <div class="chart-label">${m}</div>
-             </div>`).join('')}</div>`;
+             </div>`,
+          )
+          .join("")}</div>`;
       }
     }
   } catch (err) {
-    console.error('Render admin dashboard error', err);
+    console.error("Render admin dashboard error", err);
   }
 }
 
 async function renderAdminOrders() {
-  if (typeof window.VINOVA_API === 'undefined') return;
+  if (typeof window.VINOVA_API === "undefined") return;
   try {
-    const data = await window.VINOVA_API.orders.adminAll({ limit: 50 });
-    const tbody = document.getElementById('admin-orders-tbody');
+    const params = { limit: 100 };
+    if (state.adminOrderFilter) params.status = state.adminOrderFilter;
+    const data = await window.VINOVA_API.orders.adminAll(params);
+    const tbody = document.getElementById("admin-orders-tbody");
     if (tbody) {
-      tbody.innerHTML = data.orders.map(o => `
+      tbody.innerHTML = data.orders
+        .map(
+          (o) => `
             <tr>
               <td>#${o.id}</td>
-              <td>${new Date(o.created_at).toLocaleString('vi-VN')}</td>
-              <td>${o.full_name || o.email || 'Khách vãng lai'}</td>
+              <td>${new Date(o.created_at).toLocaleString("vi-VN")}</td>
+              <td>${o.full_name || o.email || o.guest_email || "Khách vãng lai"}</td>
               <td style="color:var(--c-gold-light)">${formatPrice(o.total)}</td>
-              <td>${o.shipping_method || 'standard'}</td>
-              <td><span class="status-dot ${o.status === 'completed' ? 'green' : o.status === 'cancelled' ? 'red' : 'yellow'}"></span>${o.status.toUpperCase()}</td>
+              <td>${o.shipping_method || "standard"}</td>
+              <td><span class="status-dot ${o.status === "completed" ? "green" : o.status === "cancelled" ? "red" : "yellow"}"></span>${o.status.toUpperCase()}</td>
               <td>
                 <select onchange="updateOrderStatus(${o.id}, this.value)" class="sort-select" style="padding:.2rem;font-size:.75rem">
-                    <option value="pending" ${o.status === 'pending' ? 'selected' : ''}>Pending</option>
-                    <option value="confirmed" ${o.status === 'confirmed' ? 'selected' : ''}>Confirmed</option>
-                    <option value="shipping" ${o.status === 'shipping' ? 'selected' : ''}>Shipping</option>
-                    <option value="completed" ${o.status === 'completed' ? 'selected' : ''}>Completed</option>
-                    <option value="cancelled" ${o.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                    <option value="pending" ${o.status === "pending" ? "selected" : ""}>Pending</option>
+                    <option value="confirmed" ${o.status === "confirmed" ? "selected" : ""}>Confirmed</option>
+                    <option value="shipping" ${o.status === "shipping" ? "selected" : ""}>Shipping</option>
+                    <option value="completed" ${o.status === "completed" ? "selected" : ""}>Completed</option>
+                    <option value="cancelled" ${o.status === "cancelled" ? "selected" : ""}>Cancelled</option>
+                    <option value="refunded" ${o.status === "refunded" ? "selected" : ""}>Refunded</option>
                 </select>
               </td>
-            </tr>`).join('');
+            </tr>`,
+        )
+        .join("");
+    }
+
+    // Update filter buttons UI
+    const filterContainer = document.getElementById("admin-order-filters");
+    if (filterContainer) {
+      const buttons = filterContainer.querySelectorAll("button");
+      buttons.forEach((btn) => {
+        const status = btn.id.replace("filter-", "");
+        if (
+          (status === "all" && !state.adminOrderFilter) ||
+          status === state.adminOrderFilter
+        ) {
+          btn.className = "btn btn--primary btn--sm";
+        } else {
+          btn.className = "btn btn--ghost btn--sm";
+        }
+      });
     }
   } catch (err) {
     console.error(err);
   }
 }
 
+window.setAdminOrderFilter = function (status) {
+  state.adminOrderFilter = status;
+  renderAdminOrders();
+};
+
+window.exportAdminOrders = async function () {
+  if (typeof window.VINOVA_API === "undefined") return;
+  try {
+    showToast("Đang chuẩn bị dữ liệu xuất...", "info");
+    const data = await window.VINOVA_API.orders.adminAll({ limit: 1000 });
+    if (!data.orders || data.orders.length === 0) {
+      showToast("Không có dữ liệu để xuất", "warning");
+      return;
+    }
+
+    const headers = [
+      "Mã Đơn",
+      "Ngày đặt",
+      "Khách hàng",
+      "Email",
+      "Tổng tiền",
+      "Phương thức",
+      "Trạng thái",
+    ];
+    const rows = data.orders.map((o) => [
+      o.id,
+      new Date(o.created_at).toLocaleString("vi-VN"),
+      o.full_name || "Khách vãng lai",
+      o.email || o.guest_email || "",
+      o.total,
+      o.payment_method,
+      o.status,
+    ]);
+
+    const csvContent =
+      "\uFEFF" + [headers, ...rows].map((e) => e.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `vinova_orders_${new Date().toISOString().slice(0, 10)}.csv`,
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast("Đã xuất file thành công", "success");
+  } catch (err) {
+    showToast("Lỗi khi xuất dữ liệu", "error");
+    console.error(err);
+  }
+};
+
 window.updateOrderStatus = async function (id, status) {
   try {
     await window.VINOVA_API.orders.updateStatus(id, status);
-    window.showToast('Cập nhật trạng thái thành công', 'success');
+    window.showToast("Cập nhật trạng thái thành công", "success");
+    renderAdminOrders();
+    renderAdminDashboard(); // Update counts
   } catch (err) {
-    window.showToast(err.message, 'error');
+    window.showToast(err.message, "error");
     renderAdminOrders();
   }
-}
+};
 
 async function renderAdminProducts() {
-  if (typeof window.VINOVA_API === 'undefined') return;
+  if (typeof window.VINOVA_API === "undefined") return;
   try {
-    const data = await window.VINOVA_API.products.list({ limit: 100, sort: 'newest' });
-    const tbody = document.getElementById('admin-products-tbody');
+    const data = await window.VINOVA_API.products.list({
+      limit: 100,
+      sort: "id-asc",
+    });
+    const tbody = document.getElementById("admin-products-tbody");
     if (tbody) {
-      tbody.innerHTML = data.products.map(p => `
+      tbody.innerHTML = data.products
+        .map(
+          (p) => `
             <tr>
               <td>#${p.id}</td>
               <td>${p.name}</td>
-              <td>${p.region || '-'}</td>
+              <td>${p.region || "-"}</td>
               <td style="color:var(--c-gold-light)">${formatPrice(p.price)}</td>
-              <td style="color:${p.stock <= 5 ? 'var(--c-error)' : 'inherit'};font-weight:600">${p.stock}</td>
+              <td style="color:${p.stock <= 5 ? "var(--c-error)" : "inherit"};font-weight:600">${p.stock}</td>
               <td><span class="badge badge--green">Hoạt động</span></td>
               <td>
                 <button class="btn btn--sm btn--outline" onclick="window.navigate('product-detail', {id: ${p.id}})">Xem</button>
               </td>
-            </tr>`).join('');
+            </tr>`,
+        )
+        .join("");
     }
   } catch (err) {
     console.error(err);
@@ -1421,19 +2322,26 @@ async function renderAdminProducts() {
 }
 
 async function renderAdminInventory() {
-  if (typeof window.VINOVA_API === 'undefined') return;
+  if (typeof window.VINOVA_API === "undefined") return;
   try {
-    const data = await window.VINOVA_API.products.list({ limit: 100, sort: 'newest' });
-    const tbody = document.getElementById('admin-inventory-full-tbody');
+    const data = await window.VINOVA_API.products.list({
+      limit: 100,
+      sort: "id-asc",
+    });
+    const tbody = document.getElementById("admin-inventory-full-tbody");
     if (tbody) {
-      tbody.innerHTML = data.products.map(p => `
+      tbody.innerHTML = data.products
+        .map(
+          (p) => `
             <tr>
               <td>#${p.id}</td>
               <td>${p.name}</td>
-              <td>${p.type || '-'}</td>
-              <td>${p.region || '-'}</td>
-              <td style="color:${p.stock <= 5 ? 'var(--c-error)' : 'inherit'};font-weight:600">${p.stock}</td>
-            </tr>`).join('');
+              <td>${p.type || "-"}</td>
+              <td>${p.region || "-"}</td>
+              <td style="color:${p.stock <= 5 ? "var(--c-error)" : "inherit"};font-weight:600">${p.stock}</td>
+            </tr>`,
+        )
+        .join("");
     }
   } catch (err) {
     console.error(err);
@@ -1441,20 +2349,24 @@ async function renderAdminInventory() {
 }
 
 async function renderAdminCustomers() {
-  if (typeof window.VINOVA_API === 'undefined') return;
+  if (typeof window.VINOVA_API === "undefined") return;
   try {
     const data = await window.VINOVA_API.admin.users({ limit: 50 });
-    const tbody = document.getElementById('admin-customers-tbody');
+    const tbody = document.getElementById("admin-customers-tbody");
     if (tbody) {
-      tbody.innerHTML = data.users.map(u => `
+      tbody.innerHTML = data.users
+        .map(
+          (u) => `
             <tr>
               <td>#${u.id}</td>
               <td>${u.email}</td>
-              <td>${u.full_name || '-'}</td>
-              <td><span class="badge ${u.role === 'admin' ? 'badge--gold' : 'badge--muted'}">${u.role.toUpperCase()}</span></td>
-              <td>${u.tier ? u.tier.toUpperCase() : '-'}</td>
-              <td>${new Date(u.created_at).toLocaleDateString('vi-VN')}</td>
-            </tr>`).join('');
+              <td>${u.full_name || "-"}</td>
+              <td><span class="badge ${u.role === "admin" ? "badge--gold" : "badge--muted"}">${u.role.toUpperCase()}</span></td>
+              <td>${u.tier ? u.tier.toUpperCase() : "-"}</td>
+              <td>${new Date(u.created_at).toLocaleDateString("vi-VN")}</td>
+            </tr>`,
+        )
+        .join("");
     }
   } catch (err) {
     console.error(err);
@@ -1462,166 +2374,230 @@ async function renderAdminCustomers() {
 }
 
 function renderPromosAdmin() {
-  const tbody = document.getElementById('promoTableBody');
+  const tbody = document.getElementById("promoTableBody");
   if (!tbody) return;
   if (!state.promos || !state.promos.length) {
-    tbody.innerHTML = '<tr><td colspan="4" style="padding:.75rem;text-align:center;color:var(--c-muted)">Chưa có mã khuyến mãi nào</td></tr>';
+    tbody.innerHTML =
+      '<tr><td colspan="4" style="padding:.75rem;text-align:center;color:var(--c-muted)">Chưa có mã khuyến mãi nào</td></tr>';
     return;
   }
-  tbody.innerHTML = state.promos.map((p, idx) => `
+  tbody.innerHTML = state.promos
+    .map(
+      (p, idx) => `
     <tr style="border-bottom:1px solid var(--c-border)">
       <td style="padding:.75rem;font-weight:600">${p.code}</td>
       <td style="padding:.75rem;color:var(--c-gold)">${p.discount}%</td>
       <td style="padding:.75rem">
-        <span style="padding:.2rem .5rem; border-radius:99px; background:${p.active ? 'rgba(39,174,96,0.1)' : 'rgba(231,76,60,0.1)'}; color:${p.active ? '#27ae60' : '#e74c3c'}; font-size:.75rem;">
-          ${p.active ? 'Hoạt động' : 'Tạm dừng'}
+        <span style="padding:.2rem .5rem; border-radius:99px; background:${p.active ? "rgba(39,174,96,0.1)" : "rgba(231,76,60,0.1)"}; color:${p.active ? "#27ae60" : "#e74c3c"}; font-size:.75rem;">
+          ${p.active ? "Hoạt động" : "Tạm dừng"}
         </span>
       </td>
       <td style="padding:.75rem">
-        <button class="btn btn--outline btn--sm" style="padding:.2rem .5rem" onclick="togglePromo(${idx})">${p.active ? 'Dừng' : 'Bật'}</button>
+        <button class="btn btn--outline btn--sm" style="padding:.2rem .5rem" onclick="togglePromo(${idx})">${p.active ? "Dừng" : "Bật"}</button>
         <button class="btn btn--ghost btn--sm" style="padding:.2rem .5rem;color:var(--c-error)" onclick="deletePromo(${idx})">Xóa</button>
       </td>
     </tr>
-  `).join('');
+  `,
+    )
+    .join("");
 }
 
-window.openPromoModal = () => document.getElementById('promoModal')?.classList.add('open');
-window.closePromoModal = () => document.getElementById('promoModal')?.classList.remove('open');
+window.openPromoModal = () =>
+  document.getElementById("promoModal")?.classList.add("open");
+window.closePromoModal = () =>
+  document.getElementById("promoModal")?.classList.remove("open");
 
 window.createPromoCode = () => {
-  const codeInput = document.getElementById('newPromoCode');
-  const discountInput = document.getElementById('newPromoDiscount');
+  const codeInput = document.getElementById("newPromoCode");
+  const discountInput = document.getElementById("newPromoDiscount");
   const code = codeInput?.value.trim().toUpperCase();
   const discount = parseInt(discountInput?.value || 0);
 
-  if (!code) return window.showToast('Vui lòng nhập mã code', 'error');
-  if (!discount || discount < 1 || discount > 100) return window.showToast('Mức giảm giá không hợp lệ', 'error');
-  if (state.promos.find(p => p.code === code)) return window.showToast('Mã code này đã tồn tại', 'error');
+  if (!code) return window.showToast("Vui lòng nhập mã code", "error");
+  if (!discount || discount < 1 || discount > 100)
+    return window.showToast("Mức giảm giá không hợp lệ", "error");
+  if (state.promos.find((p) => p.code === code))
+    return window.showToast("Mã code này đã tồn tại", "error");
 
   state.promos.push({ code, discount, active: true });
-  localStorage.setItem('vinova_promos', JSON.stringify(state.promos));
+  localStorage.setItem("vinova_promos", JSON.stringify(state.promos));
   renderPromosAdmin();
   window.closePromoModal();
-  codeInput.value = ''; discountInput.value = '';
-  window.showToast('Đã tạo mã khuyến mãi mới!', 'success');
+  codeInput.value = "";
+  discountInput.value = "";
+  window.showToast("Đã tạo mã khuyến mãi mới!", "success");
 };
 
 window.togglePromo = (idx) => {
   state.promos[idx].active = !state.promos[idx].active;
-  localStorage.setItem('vinova_promos', JSON.stringify(state.promos));
+  localStorage.setItem("vinova_promos", JSON.stringify(state.promos));
   renderPromosAdmin();
-  window.showToast('Đã cập nhật trạng thái mã', 'success');
+  window.showToast("Đã cập nhật trạng thái mã", "success");
 };
 
 window.deletePromo = (idx) => {
-  if (!confirm('Bạn có chắc chắn muốn xóa mã này?')) return;
+  if (!confirm("Bạn có chắc chắn muốn xóa mã này?")) return;
   state.promos.splice(idx, 1);
-  localStorage.setItem('vinova_promos', JSON.stringify(state.promos));
+  localStorage.setItem("vinova_promos", JSON.stringify(state.promos));
   renderPromosAdmin();
-  window.showToast('Đã xóa mã khuyến mãi', 'success');
+  window.showToast("Đã xóa mã khuyến mãi", "success");
 };
 
 // ─── ADMIN PRODUCT MODAL ────────────────────────────────────────────────
-window.openProductModal = () => document.getElementById('productModal')?.classList.add('open');
-window.closeProductModal = () => document.getElementById('productModal')?.classList.remove('open');
+window.openProductModal = () =>
+  document.getElementById("productModal")?.classList.add("open");
+window.closeProductModal = () =>
+  document.getElementById("productModal")?.classList.remove("open");
 
 window.submitNewProduct = async () => {
-  const name = document.getElementById('newProductName')?.value.trim();
-  const region = document.getElementById('newProductRegion')?.value.trim();
-  const type = document.getElementById('newProductType')?.value;
-  const grape = document.getElementById('newProductGrape')?.value.trim();
-  const price = parseInt(document.getElementById('newProductPrice')?.value) || 0;
-  const stock = parseInt(document.getElementById('newProductStock')?.value) || 0;
-  const abv = document.getElementById('newProductAbv')?.value.trim();
-  const imgUrl = document.getElementById('newProductImg')?.value.trim();
-  const desc = document.getElementById('newProductDesc')?.value.trim();
+  const name = document.getElementById("newProductName")?.value.trim();
+  const region = document.getElementById("newProductRegion")?.value.trim();
+  const type = document.getElementById("newProductType")?.value;
+  const grape = document.getElementById("newProductGrape")?.value.trim();
+  const price =
+    parseInt(document.getElementById("newProductPrice")?.value) || 0;
+  const stock =
+    parseInt(document.getElementById("newProductStock")?.value) || 0;
+  const abv = document.getElementById("newProductAbv")?.value.trim();
+  const imgUrl = document.getElementById("newProductImg")?.value.trim();
+  const desc = document.getElementById("newProductDesc")?.value.trim();
 
   if (!name || !region || !type || !price) {
-    return window.showToast('Vui lòng điền các trường bắt buộc (*)', 'error');
+    return window.showToast("Vui lòng điền các trường bắt buộc (*)", "error");
   }
 
   const payload = {
-    name, region, type, price, stock,
+    name,
+    region,
+    type,
+    price,
+    stock,
     grape: grape || null,
     abv: abv || null,
     img: imgUrl || null,
-    description: desc || null
+    description: desc || null,
   };
 
   try {
     const res = await window.VINOVA_API.products.create(payload);
-    window.showToast('Thêm sản phẩm thành công!', 'success');
+    window.showToast("Thêm sản phẩm thành công!", "success");
     window.closeProductModal();
     // Clear inputs
-    document.querySelectorAll('#productModal input, #productModal textarea').forEach(el => el.value = '');
-    document.getElementById('newProductStock').value = '10'; // reset default
+    document
+      .querySelectorAll("#productModal input, #productModal textarea")
+      .forEach((el) => (el.value = ""));
+    document.getElementById("newProductStock").value = "10"; // reset default
 
     // Refresh inventory and dashboard if we are actively viewing it
-    if (typeof renderAdminInventory === 'function') renderAdminInventory();
+    if (typeof renderAdminInventory === "function") renderAdminInventory();
   } catch (err) {
-    window.showToast(err.message, 'error');
+    window.showToast(err.message, "error");
   }
 };
 
 // Charts logic embedded inside `renderAdminDashboard`
 // ─── WINE CLUB ────────────────────────────────────────────────
-function renderWineClub() { /* static content */ }
+function renderWineClub() {
+  /* static content */
+}
 
 // ─── FILTER EVENTS ────────────────────────────────────────────
 function initFilters() {
-  document.querySelectorAll('.filter-option input[type=checkbox]').forEach(cb => {
-    cb.addEventListener('change', () => {
-      const cat = cb.dataset.filter, val = cb.value;
-      if (!state.filters[cat]) state.filters[cat] = [];
-      if (cb.checked) { if (!state.filters[cat].includes(val)) state.filters[cat].push(val); }
-      else { state.filters[cat] = state.filters[cat].filter(v => v !== val); }
-      if (state.page === 'products') renderProductListing();
+  document
+    .querySelectorAll(".filter-option input[type=checkbox]")
+    .forEach((cb) => {
+      cb.addEventListener("change", () => {
+        const cat = cb.dataset.filter,
+          val = cb.value;
+        if (!state.filters[cat]) state.filters[cat] = [];
+        if (cb.checked) {
+          if (!state.filters[cat].includes(val)) state.filters[cat].push(val);
+        } else {
+          state.filters[cat] = state.filters[cat].filter((v) => v !== val);
+        }
+        if (state.page === "products") renderProductListing();
+      });
     });
+
+  const pf = document.getElementById("priceFilter");
+  const pl = document.getElementById("priceMaxLabel");
+  if (pf && pl) {
+    pf.addEventListener("input", (e) => {
+      const val = parseInt(e.target.value, 10);
+      pl.textContent = val >= 100000000 ? "100M+₫" : val / 1000000 + "M₫";
+    });
+    pf.addEventListener("change", (e) => {
+      state.filters.priceMax = parseInt(e.target.value, 10);
+      if (state.page === "products") renderProductListing();
+    });
+  }
+
+  document.getElementById("sortSelect")?.addEventListener("change", () => {
+    if (state.page === "products") renderProductListing();
   });
-  document.getElementById('sortSelect')?.addEventListener('change', () => {
-    if (state.page === 'products') renderProductListing();
-  });
-  document.getElementById('filterMobileBtn')?.addEventListener('click', () => {
-    document.querySelector('.filter-sidebar')?.classList.toggle('open');
+  document.getElementById("filterMobileBtn")?.addEventListener("click", () => {
+    document.querySelector(".filter-sidebar")?.classList.toggle("open");
   });
 }
 
 // ─── SEARCH ───────────────────────────────────────────────────
 function initSearch() {
-  const input = document.getElementById('searchInput');
-  const results = document.getElementById('searchResults');
+  const input = document.getElementById("searchInput");
+  const results = document.getElementById("searchResults");
   if (!input || !results) return;
   let searchTimer;
-  input.addEventListener('input', () => {
+  input.addEventListener("input", () => {
     clearTimeout(searchTimer);
     const q = input.value.trim();
-    if (!q) { results.classList.add('hidden'); return; }
+    if (!q) {
+      results.classList.add("hidden");
+      return;
+    }
     searchTimer = setTimeout(async () => {
       let matched = [];
-      if (typeof window.VINOVA_API !== 'undefined') {
+      if (typeof window.VINOVA_API !== "undefined") {
         try {
           const data = await window.VINOVA_API.products.search(q);
-          matched = (data.products || []).map(p => ({ ...p, oldPrice: p.old_price }));
-        } catch { /* fallback */ }
+          matched = (data.products || []).map((p) => ({
+            ...p,
+            oldPrice: p.old_price,
+          }));
+        } catch {
+          /* fallback */
+        }
       }
       if (!matched.length) {
         const ql = q.toLowerCase();
-        matched = PRODUCTS.filter(p => p.name.toLowerCase().includes(ql) || p.region.toLowerCase().includes(ql) || (p.grape || '').toLowerCase().includes(ql)).slice(0, 5);
+        matched = PRODUCTS.filter(
+          (p) =>
+            p.name.toLowerCase().includes(ql) ||
+            p.region.toLowerCase().includes(ql) ||
+            (p.grape || "").toLowerCase().includes(ql),
+        ).slice(0, 5);
       }
-      if (!matched.length) { results.innerHTML = `<div style="padding:1rem;color:var(--c-muted);font-size:.88rem">Không tìm thấy kết quả</div>`; }
-      else results.innerHTML = matched.slice(0, 5).map(p => `
+      if (!matched.length) {
+        results.innerHTML = `<div style="padding:1rem;color:var(--c-muted);font-size:.88rem">Không tìm thấy kết quả</div>`;
+      } else
+        results.innerHTML = matched
+          .slice(0, 5)
+          .map(
+            (p) => `
         <div style="display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;cursor:pointer;transition:background .2s;border-bottom:1px solid var(--c-border)" onmouseover="this.style.background='var(--c-surface2)'" onmouseout="this.style.background=''" onclick="navigate('product-detail',{id:${p.id}});document.getElementById('searchResults').classList.add('hidden');document.getElementById('searchInput').value=''">
           <img src="${p.img}" style="width:36px;height:48px;object-fit:cover;border-radius:4px" onerror="this.src='images/placeholder.jpg'">
           <div><div style="font-size:.88rem;font-weight:500">${p.name}</div><div style="font-size:.75rem;color:var(--c-muted)">${p.region} · ${formatPrice(p.price)}</div></div>
-        </div>`).join('');
-      results.classList.remove('hidden');
+        </div>`,
+          )
+          .join("");
+      results.classList.remove("hidden");
     }, 300);
   });
-  document.addEventListener('click', (e) => { if (!e.target.closest('.search-wrap')) results.classList.add('hidden'); });
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".search-wrap")) results.classList.add("hidden");
+  });
 }
 
 // ─── INIT ─────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
   initAgeGate();
   initNav();
   initFilters();
@@ -1629,20 +2605,49 @@ document.addEventListener('DOMContentLoaded', () => {
   initAuthUI();
   updateCartBadge();
   // Render featured products on homepage
-  const featuredContainer = document.getElementById('featuredProducts');
+  const featuredContainer = document.getElementById("featuredProducts");
   if (featuredContainer) {
-    const loadFeatured = (typeof window.VINOVA_API !== 'undefined')
-      ? window.VINOVA_API.products.list({ sort: 'rating', limit: 4 })
-        .then(d => d.products.map(p => ({ ...p, oldPrice: p.old_price, reviews: p.reviews_count, tasting: { color: '', nose: '', palate: '', finish: '' }, food: p.food_pairing || [] })))
-      : Promise.reject();
-    loadFeatured.catch(() => PRODUCTS.slice(0, 4)).then(products => {
-      featuredContainer.innerHTML = products.map(p => productCardHTML(p)).join('');
-      attachProductCardEvents();
-    });
+    const loadFeatured =
+      typeof window.VINOVA_API !== "undefined"
+        ? window.VINOVA_API.products
+            .list({ sort: "rating", limit: 4 })
+            .then((d) =>
+              d.products.map((p) => ({
+                ...p,
+                oldPrice: p.old_price,
+                reviews: p.reviews_count,
+                tasting: { color: "", nose: "", palate: "", finish: "" },
+                food: p.food_pairing || [],
+              })),
+            )
+        : Promise.reject();
+    loadFeatured
+      .catch(() => PRODUCTS.slice(0, 4))
+      .then((products) => {
+        featuredContainer.innerHTML = products
+          .map((p) => productCardHTML(p))
+          .join("");
+        attachProductCardEvents();
+      });
   }
   // Navigate to hash page
-  const hash = window.location.hash.replace('#', '') || 'home';
-  navigate(['home', 'products', 'cart', 'checkout', 'account', 'wine-club', 'admin', 'product-detail'].includes(hash) ? hash : 'home');
-  console.log('%cVINOVA Premium Wine & Spirits', 'color:#c9a84c;font-size:1.2rem;font-weight:bold');
+  const hash = window.location.hash.replace("#", "") || "home";
+  navigate(
+    [
+      "home",
+      "products",
+      "cart",
+      "checkout",
+      "account",
+      "wine-club",
+      "admin",
+      "product-detail",
+    ].includes(hash)
+      ? hash
+      : "home",
+  );
+  console.log(
+    "%cVINOVA Premium Wine & Spirits",
+    "color:#c9a84c;font-size:1.2rem;font-weight:bold",
+  );
 });
-
