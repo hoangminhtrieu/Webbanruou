@@ -1,6 +1,4 @@
-/* ============================================================
-   VINOVA — Main Application JavaScript
-   ============================================================ */
+// VINOVA — JavaScript ứng dụng chính
 
 window.state = {
   cart: JSON.parse(localStorage.getItem("vinova_cart") || "[]"),
@@ -30,18 +28,18 @@ window.state = {
 };
 const state = window.state;
 
-// ─── INIT AUTH ────────────────────────────────────────────────
+// Khởi tạo xác thực
 function initAuthUI() {
   const btn = document.getElementById("headerAuthBtn");
   const adminLink = document.getElementById("navAdminLink");
 
-  // Show admin link if user role is admin
+  // Hiển thị liên kết quản trị nếu vai trò người dùng là admin
   if (adminLink) {
     if (state.user && state.user.role === "admin") {
       adminLink.setAttribute("style", "display: block !important");
     } else {
       adminLink.setAttribute("style", "display: none !important");
-      // If currently on admin page and not admin, redirect to home
+      // Nếu hiện đang ở trang admin mà không phải admin, chuyển hướng về trang chủ
       if (state.page === "admin") navigate("home");
     }
   }
@@ -74,7 +72,7 @@ window.addEventListener("auth:logout", () => {
   showToast("Đã đăng xuất thành công", "info");
 });
 
-// ─── PRODUCTS DATABASE ────────────────────────────────────────
+// Cơ sở dữ liệu sản phẩm
 const PRODUCTS = [
   {
     id: 1,
@@ -834,7 +832,7 @@ const PRODUCTS = [
   },
 ];
 
-// ─── COUNTRY FLAG MAP ─────────────────────────────────────────
+// ─── BẢN ĐỒ CỜ QUỐC GIA ───────────────────────────────────────
 const FLAGS = {
   Pháp: '<img src="https://flagcdn.com/w20/fr.png" srcset="https://flagcdn.com/w40/fr.png 2x" alt="Pháp" class="flag-icon">',
   France:
@@ -879,7 +877,7 @@ function getFlag(region) {
   return FLAGS[region] ? FLAGS[region] + " " : "";
 }
 
-// ─── CURRENCY CONFIG ──────────────────────────────────────────
+// ─── CẤU HÌNH TIỀN TỆ ─────────────────────────────────────────
 
 const CURRENCIES = {
   VND: { symbol: "₫", rate: 1, format: (v) => `${v.toLocaleString("vi-VN")}₫` },
@@ -899,7 +897,7 @@ function formatPrice(vnd) {
   return CURRENCIES[state.currency].format(vnd);
 }
 
-// ─── UTILITIES ────────────────────────────────────────────────
+// ─── CÁC TIỆN ÍCH ─────────────────────────────────────────────
 function saveState() {
   localStorage.setItem("vinova_cart", JSON.stringify(state.cart));
   localStorage.setItem("vinova_wishlist", JSON.stringify(state.wishlist));
@@ -934,7 +932,7 @@ window.updateCartBadge = function () {
 };
 const updateCartBadge = window.updateCartBadge;
 
-// ─── AGE GATE ─────────────────────────────────────────────────
+// ─── CỔNG XÁC MINH TUỔI ───────────────────────────────────────
 function initAgeGate() {
   const overlay = document.getElementById("ageGate");
   if (!overlay) return;
@@ -973,9 +971,9 @@ function initAgeGate() {
   });
 }
 
-// ─── NAVIGATION ───────────────────────────────────────────────
+// ─── ĐIỀU HƯỚNG ───────────────────────────────────────────────
 function navigate(page, data = {}) {
-  // Check admin routing block
+  // Kiểm tra chặn điều hướng admin
   if (page === "admin" && (!state.user || state.user.role !== "admin")) {
     showToast("Bạn không có quyền truy cập trang quản trị", "error");
     navigate("home");
@@ -1004,7 +1002,7 @@ function navigate(page, data = {}) {
   if (page === "wine-club") renderWineClub();
 }
 
-// ─── HAMBURGER ────────────────────────────────────────────────
+// ─── MENU ĐIỆN THOẠI (HAMBURGER) ──────────────────────────────
 function initNav() {
   document.querySelector(".hamburger")?.addEventListener("click", () => {
     document.querySelector(".navbar__menu")?.classList.toggle("open");
@@ -1024,7 +1022,7 @@ function initNav() {
       .querySelector(".navbar")
       ?.classList.toggle("scrolled", window.scrollY > 30);
   });
-  // Currency
+  // Tiền tệ
   document.getElementById("currencySelect")?.addEventListener("change", (e) => {
     state.currency = e.target.value;
     saveState();
@@ -1038,7 +1036,7 @@ function updatePrices() {
   });
 }
 
-// ─── PRODUCT LISTING ──────────────────────────────────────────
+// ─── DANH SÁCH SẢN PHẨM ───────────────────────────────────────
 function renderProductListing() {
   const container = document.getElementById("productGrid");
   if (!container) return;
@@ -1127,7 +1125,7 @@ async function updateFilterCounts() {
     const counts = await window.VINOVA_API.products.getFilterCounts();
     if (!counts) return;
 
-    // Update Types
+    // Cập nhật loại sản phẩm
     document.querySelectorAll('[data-filter="types"]').forEach((input) => {
       const val = input.value;
       const countSpan = input.closest(".filter-option").querySelector(".count");
@@ -1138,7 +1136,7 @@ async function updateFilterCounts() {
       }
     });
 
-    // Update Regions
+    // Cập nhật vùng miền
     document.querySelectorAll('[data-filter="regions"]').forEach((input) => {
       const val = input.value;
       const countSpan = input.closest(".filter-option").querySelector(".count");
@@ -1222,7 +1220,7 @@ function attachProductCardEvents() {
   });
 }
 
-// ─── PRODUCT DETAIL ───────────────────────────────────────────
+// ─── CHI TIẾT SẢN PHẨM ────────────────────────────────────────
 function renderProductDetail(id) {
   const container = document.getElementById("productDetailContent");
   if (!container) return;
@@ -1243,7 +1241,7 @@ function renderProductDetail(id) {
           '<div style="padding:2rem">Không tìm thấy sản phẩm</div>';
         return;
       }
-      // Normalize
+      // Chuẩn hóa dữ liệu
       p = {
         ...p,
         oldPrice: p.oldPrice ?? p.old_price,
@@ -1268,7 +1266,7 @@ function renderProductDetail(id) {
 
       container.innerHTML = `
   <div class="product-detail animate-up">
-    <!-- Gallery -->
+    // Bộ sưu tập ảnh (Gallery)
     <div class="product-gallery">
       <div class="gallery-main">
         <img src="${p.img}" alt="${p.name}" id="galleryMain" onerror="this.src='images/placeholder.jpg'">
@@ -1377,7 +1375,7 @@ function renderProductDetail(id) {
     </div>
   </div>`;
 
-      // Qty controls
+      // Điều khiển số lượng
       let qty = 1;
       document.getElementById("qtyMinus")?.addEventListener("click", () => {
         if (qty > 1) {
@@ -1392,7 +1390,7 @@ function renderProductDetail(id) {
         }
       });
 
-      // Tabs
+      // Các Tab thông tin
       container.querySelectorAll(".tab-btn").forEach((btn) => {
         btn.addEventListener("click", () => {
           container
@@ -1407,7 +1405,7 @@ function renderProductDetail(id) {
             ?.classList.add("active");
         });
       });
-      // Variant buttons
+      // Nút chọn phiên bản sản phẩm
       container.querySelectorAll(".variant-btn").forEach((btn) => {
         btn.addEventListener("click", () => {
           container
@@ -1481,7 +1479,7 @@ function generateReviewsHTML(p) {
       date: new Date(r.created_at).toLocaleDateString("vi-VN"),
     }));
   } else {
-    // Static fallback
+    // Dữ liệu dự phòng tĩnh (Static fallback)
     reviews = [
       {
         name: "Nguyễn Văn A",
@@ -1522,7 +1520,7 @@ function generateReviewsHTML(p) {
   </div>`;
 }
 
-// ─── CART ─────────────────────────────────────────────────────
+// ─── GIỎ HÀNG ─────────────────────────────────────────────────
 function addToCart(id, qty = 1) {
   const p = PRODUCTS.find((x) => x.id === id) || {
     id,
@@ -1554,7 +1552,7 @@ function addToCart(id, qty = 1) {
       );
     return;
   }
-  // Guest fallback → localStorage
+  // Dự phòng cho khách (Guest fallback) → sử dụng localStorage
   const existing = state.cart.find((i) => i.id === id);
   if (existing) existing.qty = Math.min(existing.qty + qty, p.stock);
   else
@@ -2488,7 +2486,7 @@ window.submitNewProduct = async () => {
       .forEach((el) => (el.value = ""));
     document.getElementById("newProductStock").value = "10"; // reset default
 
-    // Refresh inventory and dashboard if we are actively viewing it
+    // Thông tin sản phẩm
     if (typeof renderAdminInventory === "function") renderAdminInventory();
   } catch (err) {
     window.showToast(err.message, "error");

@@ -1,7 +1,4 @@
-// ============================================================
-// Database Configuration — node:sqlite (built-in Node.js v22+)
-// No external dependencies needed!
-// ============================================================
+// Cấu hình SQLite (Node.js v22+)
 const { DatabaseSync } = require("node:sqlite");
 const path = require("path");
 const fs = require("fs");
@@ -23,7 +20,7 @@ function getDB() {
 function initDB() {
   const database = getDB();
   const schema = fs.readFileSync(SCHEMA_PATH, "utf8");
-  // Remove comments and split by semicolons
+  // Loại bỏ các comment và tách bằng dấu chấm phẩy
   const cleaned = schema.replace(/--[^\n]*/g, "");
   const statements = cleaned
     .split(";")
@@ -33,14 +30,14 @@ function initDB() {
     try {
       database.exec(stmt + ";");
     } catch (e) {
-      /* skip if already exists */
+      /* bỏ qua nếu đã tồn tại */
     }
   }
   console.log("✅ Database initialized:", DB_PATH);
   return database;
 }
 
-// Helper: wrap a function in a transaction (mimics better-sqlite3 API)
+// Hỗ trợ: bọc một hàm trong một transaction (mô phỏng API better-sqlite3)
 function transaction(db, fn) {
   return function (...args) {
     db.exec("BEGIN");
@@ -55,7 +52,7 @@ function transaction(db, fn) {
   };
 }
 
-// Helper: get lastInsertRowid as Number (node:sqlite returns BigInt)
+// Hỗ trợ: lấy lastInsertRowid dưới dạng Number (node:sqlite trả về BigInt)
 function lastId(result) {
   return Number(result.lastInsertRowid);
 }

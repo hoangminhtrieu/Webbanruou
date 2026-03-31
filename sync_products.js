@@ -1,3 +1,6 @@
+/**
+ * Tự động đồng bộ sản phẩm từ app.js sang file seed của backend.
+ */
 const fs = require("fs");
 const path = require("path");
 
@@ -6,21 +9,22 @@ const seedJsPath = "d:/Webbanruou/server/seeds/products.js";
 
 const appJsContent = fs.readFileSync(appJsPath, "utf8");
 
-// Extract PRODUCTS array from app.js
+// Trích xuất mảng PRODUCTS từ app.js
 const productsMatch = appJsContent.match(/const PRODUCTS = (\[[\s\S]*?\]);/);
 if (!productsMatch) {
   console.error("Could not find PRODUCTS array in app.js");
   process.exit(1);
 }
 
-// We can't simply JSON.parse because it's JS code, not JSON (e.g., missing quotes on keys, trailing commas)
-// But we can use eval safely here in our own script or just use regex to clean it up.
-// Better: use a simple regex-based extraction for each product object.
+// Chúng ta không thể sử dụng JSON.parse một cách đơn giản vì đây là mã JS, không phải JSON (ví dụ: thiếu dấu ngoặc kép ở các thuộc tính, dư dấu phẩy)
+// Nhưng chúng ta có thể sử dụng eval một cách an toàn ở đây trong script của mình hoặc dùng regex để làm sạch dữ liệu.
+// Cách tốt hơn: sử dụng trích xuất dựa trên regex đơn giản cho từng đối tượng sản phẩm.
 const productsText = productsMatch[1];
 const productBlocks = productsText.match(/\{[\s\S]*?\}/g);
 
 const transformedProducts = productBlocks.map((block) => {
-  // Basic extraction of fields using regex
+  // Trích xuất cơ bản các trường bằng regex
+  /** Trích xuất giá trị số hoặc boolean */
   const getValue = (key) => {
     const regex = new RegExp(`${key}:\\s*([^,]+),`);
     const match = block.match(regex);
@@ -30,6 +34,7 @@ const transformedProducts = productBlocks.map((block) => {
     return val;
   };
 
+  /** Trích xuất đối tượng (object) */
   const getObjectValue = (key) => {
     const regex = new RegExp(
       `${key}:\\s*({[\\s\\S]*?}),\\s*(?:food|tags|stock)`,
@@ -39,6 +44,7 @@ const transformedProducts = productBlocks.map((block) => {
     return match[1].trim().replace(/\s+/g, " ");
   };
 
+  /** Trích xuất mảng (array) */
   const getArrayValue = (key) => {
     const regex = new RegExp(`${key}:\\s*(\\[[\\s\\S]*?\\]),`);
     const match = block.match(regex);
@@ -46,6 +52,7 @@ const transformedProducts = productBlocks.map((block) => {
     return match[1].trim().replace(/\s+/g, " ");
   };
 
+  /** Trích xuất chuỗi văn bản (string) */
   const getStringValue = (key) => {
     const regex = new RegExp(`${key}:\\s*(".*?"|'.*?'),`);
     const match = block.match(regex);
@@ -80,7 +87,7 @@ const transformedProducts = productBlocks.map((block) => {
   };
 });
 
-// Format as JS array
+// Định dạng lại thành mảng JS
 let newProductsArrayText = "const products = [\n";
 transformedProducts.forEach((p) => {
   newProductsArrayText += `    {\n`;

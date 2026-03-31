@@ -1,23 +1,27 @@
-// ============================================================
-// VINOVA Backend — Express Server
-// ============================================================
+// VINOVA Backend — Máy chủ Express
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const path = require("path");
+const fs = require("fs"); // Thêm dòng này để sử dụng fs
 const { initDB } = require("./config/database");
 
 const app = express();
-const PORT = process.env.PORT || 3001;
 
-// ─── Init database ───────────────────────────────────────────
+const uploadsDir = path.join(__dirname, "../uploads");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir);
+}
+
+const PORT = process.env.PORT || 5000;
+
 initDB();
 
-// ─── Security Middleware ─────────────────────────────────────
+// Middleware bảo mật
 app.use(
   helmet({
-    contentSecurityPolicy: false, // Frontend served separately
+    contentSecurityPolicy: false, // Frontend được phục vụ riêng
   }),
 );
 app.use(
@@ -27,9 +31,9 @@ app.use(
   }),
 );
 
-// Rate limiting
+// Giới hạn tốc độ (Rate limiting)
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000, // 15 phút
   max: 200,
   message: { error: "Quá nhiều request, vui lòng thử lại sau" },
 });
@@ -41,8 +45,7 @@ const authLimiter = rateLimit({
 app.use("/api/", limiter);
 app.use("/api/auth/", authLimiter);
 
-// ─── Body Parsers ─────────────────────────────────────────────
-// Stripe webhook needs raw body — mount BEFORE json parser
+// Bộ phân tích Body (Stripe webhook cần raw body)
 app.use(
   "/api/payments/stripe/webhook",
   express.raw({ type: "application/json" }),
@@ -50,10 +53,13 @@ app.use(
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true }));
 
-// ─── Static Files (serve frontend) ───────────────────────────
-app.use(express.static(path.join(__dirname, "..")));
+// ─── Tệp tĩnh (phục vụ frontend) ───────────────────────────
+// Middleware
+app.use(cors()); // Đã có ở trên, nhưng giữ lại theo yêu cầu
+app.use(express.json()); // Đã có ở trên, nhưng giữ lại theo yêu cầu
+app.use(express.static(path.join(__dirname, "../"))); // Phục vụ các tệp tĩnh từ gốc dự án
 
-// ─── API Routes ───────────────────────────────────────────────
+// Tuyến đường API
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/products", require("./routes/products"));
 app.use("/api/cart", require("./routes/cart"));

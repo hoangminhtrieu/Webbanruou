@@ -1,3 +1,7 @@
+/**
+ * Tự động lấy dữ liệu Tỉnh thành/Quận huyện từ Provinces Open API cho form thanh toán.
+ * @async
+ */
 document.addEventListener("DOMContentLoaded", async () => {
   const citySt = document.getElementById("checkoutCity");
   const distSt = document.getElementById("checkoutDistrict");
