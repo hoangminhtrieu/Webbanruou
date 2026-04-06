@@ -4,7 +4,7 @@ const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const path = require("path");
-const fs = require("fs"); // Thêm dòng này để sử dụng fs
+const fs = require("fs");
 const { initDB } = require("./config/database");
 
 const app = express();
@@ -54,10 +54,7 @@ app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true }));
 
 // ─── Tệp tĩnh (phục vụ frontend) ───────────────────────────
-// Middleware
-app.use(cors()); // Đã có ở trên, nhưng giữ lại theo yêu cầu
-app.use(express.json()); // Đã có ở trên, nhưng giữ lại theo yêu cầu
-app.use(express.static(path.join(__dirname, "../"))); // Phục vụ các tệp tĩnh từ gốc dự án
+app.use(express.static(path.join(__dirname, "../")));
 
 // Tuyến đường API
 app.use("/api/auth", require("./routes/auth"));

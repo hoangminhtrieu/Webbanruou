@@ -4,8 +4,8 @@
 const fs = require("fs");
 const path = require("path");
 
-const appJsPath = "d:/Webbanruou/app.js";
-const seedJsPath = "d:/Webbanruou/server/seeds/products.js";
+const appJsPath = path.join(__dirname, "app.js");
+const seedJsPath = path.join(__dirname, "server", "seeds", "products.js");
 
 const appJsContent = fs.readFileSync(appJsPath, "utf8");
 

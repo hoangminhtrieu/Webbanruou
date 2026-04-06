@@ -72,765 +72,8 @@ window.addEventListener("auth:logout", () => {
   showToast("Đã đăng xuất thành công", "info");
 });
 
-// Cơ sở dữ liệu sản phẩm
-const PRODUCTS = [
-  {
-    id: 1,
-    name: "Château Lafite Rothschild",
-    vintage: 2018,
-    region: "Pháp",
-    subregion: "Bordeaux",
-    type: "red",
-    grape: "Cabernet Sauvignon",
-    abv: 13.5,
-    volume: "750ml",
-    price: 18500000,
-    oldPrice: 21000000,
-    score: 98,
-    rating: 4.9,
-    reviews: 234,
-    badge: "Best Seller",
-    img: "images/red_wine_bottle.jpg",
-    tasting: {
-      color: "Đỏ rubis sâu",
-      nose: "Cassis, hương gỗ sồi, hoa violets",
-      palate: "Tannic mịn, thanh lịch, phức hợp",
-      finish: "Dài >90 giây",
-    },
-    food: ["Bò bít tết", "Thịt cừu nướng", "Pho mát cứng"],
-    tags: ["premium", "collection", "gift"],
-    stock: 12,
-  },
-  {
-    id: 2,
-    name: "Domaine de la Romanée-Conti",
-    vintage: 2017,
-    region: "Pháp",
-    subregion: "Burgundy",
-    type: "red",
-    grape: "Pinot Noir",
-    abv: 13.0,
-    volume: "750ml",
-    price: 95000000,
-    oldPrice: null,
-    score: 100,
-    rating: 5.0,
-    reviews: 48,
-    badge: "Hiếm",
-    img: "images/red_wine_bottle.jpg",
-    tasting: {
-      color: "Đỏ garnet trong suốt",
-      nose: "Cherry đỏ, hoa hồng, đất quý",
-      palate: "Tinh tế, phức hợp phi thường",
-      finish: ">2 phút",
-    },
-    food: ["Phô mai Comté", "Nấm truffle", "Cá hồi hun khói"],
-    tags: ["luxury", "rare", "collection"],
-    stock: 3,
-  },
-  {
-    id: 3,
-    name: "Opus One Reserve",
-    vintage: 2019,
-    region: "Mỹ",
-    subregion: "Napa Valley",
-    type: "red",
-    grape: "Cabernet Sauvignon blend",
-    abv: 14.5,
-    volume: "750ml",
-    price: 12800000,
-    oldPrice: 14500000,
-    score: 96,
-    rating: 4.8,
-    reviews: 187,
-    badge: "Mới về",
-    img: "images/red_wine_bottle.jpg",
-    tasting: {
-      color: "Đỏ tím đậm",
-      nose: "Mứt mận, chocolate đen, vanilla",
-      palate: "Dày dặn, mượt mà",
-      finish: "Dài ấm áp",
-    },
-    food: ["Sườn bò nướng BBQ", "Xốt nấm rừng", "Phô mai cheddar"],
-    tags: ["premium", "new"],
-    stock: 24,
-  },
-  {
-    id: 4,
-    name: "Dom Pérignon Vintage",
-    vintage: 2013,
-    region: "Pháp",
-    subregion: "Champagne",
-    type: "sparkling",
-    grape: "Chardonnay / Pinot Noir",
-    abv: 12.5,
-    volume: "750ml",
-    price: 7200000,
-    oldPrice: 8500000,
-    score: 97,
-    rating: 4.9,
-    reviews: 312,
-    badge: "Sale 15%",
-    img: "images/champagne_bottle.jpg",
-    tasting: {
-      color: "Vàng rơm óng ánh",
-      nose: "Bánh mì nướng, chanh vàng, acacia",
-      palate: "Sủi bọt mịn, tinh tế",
-      finish: "Tươi mát dài",
-    },
-    food: ["Hải sản tươi", "Oyster", "Caviar", "Sashimi"],
-    tags: ["champagne", "gift", "celebration"],
-    stock: 36,
-  },
-  {
-    id: 5,
-    name: "Macallan 25 Year Sherry Oak",
-    vintage: null,
-    region: "Scotland",
-    subregion: "Speyside",
-    type: "whisky",
-    grape: null,
-    abv: 43.0,
-    volume: "700ml",
-    price: 52000000,
-    oldPrice: null,
-    score: 95,
-    rating: 4.9,
-    reviews: 89,
-    badge: "Siêu hiếm",
-    img: "images/whisky_bottle.jpg",
-    tasting: {
-      color: "Amber vàng tươi",
-      nose: "Sherry ngọt, vanilla, gừng",
-      palate: "Mịn như nhung, phong phú",
-      finish: "Rất dài ấm áp",
-    },
-    food: ["Chocolate đen", "Cigar Cuba", "Phô mai cứng"],
-    tags: ["whisky", "luxury", "rare"],
-    stock: 5,
-  },
-  {
-    id: 6,
-    name: "Sassicaia 2020",
-    vintage: 2020,
-    region: "Ý",
-    subregion: "Bolgheri",
-    type: "red",
-    grape: "Cabernet Sauvignon",
-    abv: 13.5,
-    volume: "750ml",
-    price: 6800000,
-    oldPrice: 7500000,
-    score: 94,
-    rating: 4.7,
-    reviews: 156,
-    badge: null,
-    img: "images/red_wine_bottle.jpg",
-    tasting: {
-      color: "Đỏ rubis đậm",
-      nose: "Blackberry, ceder, herbs Địa Trung Hải",
-      palate: "Đậm đà, cấu trúc tốt",
-      finish: "Dài và nhất quán",
-    },
-    food: ["Pasta thịt bò", "Pizza thịt nguội", "Cá ngừ tươi"],
-    tags: ["italian", "premium"],
-    stock: 30,
-  },
-  {
-    id: 7,
-    name: "Cloudy Bay Sauvignon Blanc",
-    vintage: 2022,
-    region: "New Zealand",
-    subregion: "Marlborough",
-    type: "white",
-    grape: "Sauvignon Blanc",
-    abv: 13.0,
-    volume: "750ml",
-    price: 850000,
-    oldPrice: 1000000,
-    score: 91,
-    rating: 4.5,
-    reviews: 428,
-    badge: "Bán chạy",
-    img: "images/white_wine_bottle.jpg",
-    tasting: {
-      color: "Vàng nhạt trong suốt",
-      nose: "Chanh dây, lý chua, cỏ mới cắt",
-      palate: "Sắc sảo, tươi mát",
-      finish: "Thanh và sạch",
-    },
-    food: ["Gỏi hải sản", "Sushi", "Salad rau thơm"],
-    tags: ["white", "everyday"],
-    stock: 120,
-  },
-  {
-    id: 8,
-    name: "Concha y Toro Don Melchor",
-    vintage: 2020,
-    region: "Chile",
-    subregion: "Puente Alto",
-    type: "red",
-    grape: "Cabernet Sauvignon",
-    abv: 14.5,
-    volume: "750ml",
-    price: 2200000,
-    oldPrice: 2800000,
-    score: 93,
-    rating: 4.6,
-    reviews: 203,
-    badge: "Combo tiết kiệm",
-    img: "images/red_wine_bottle.jpg",
-    tasting: {
-      color: "Đỏ tím thẫm",
-      nose: "Cassis chín, café espresso, hương gỗ",
-      palate: "Đầy đặn, cân bằng xuất sắc",
-      finish: "Dài và tinh tế",
-    },
-    food: ["Bò wagyu", "Lamb chop", "Dark chocolate"],
-    tags: ["value", "south-america"],
-    stock: 58,
-  },
-  {
-    id: 9,
-    name: "Penfolds Grange",
-    vintage: 2018,
-    region: "Úc",
-    subregion: "South Australia",
-    type: "red",
-    grape: "Shiraz",
-    abv: 14.5,
-    volume: "750ml",
-    price: 9500000,
-    oldPrice: 11000000,
-    score: 97,
-    rating: 4.8,
-    reviews: 143,
-    badge: "Iconic",
-    img: "images/red_wine_bottle.jpg",
-    tasting: {
-      color: "Đỏ tím sậm",
-      nose: "Mận chín, chocolate, hương hồi và gỗ sồi",
-      palate: "Đậm đà, hùng hậu, tanin rất mịn",
-      finish: "Cực dài, ấm áp",
-    },
-    food: ["Kangaroo steak", "Bò nướng BBQ", "Phô mai xanh"],
-    tags: ["australian", "premium", "iconic"],
-    stock: 18,
-  },
-  {
-    id: 10,
-    name: "Vega Sicilia Único",
-    vintage: 2012,
-    region: "Tây Ban Nha",
-    subregion: "Ribera del Duero",
-    type: "red",
-    grape: "Tempranillo / Cabernet",
-    abv: 14.0,
-    volume: "750ml",
-    price: 14500000,
-    oldPrice: null,
-    score: 98,
-    rating: 4.9,
-    reviews: 67,
-    badge: "Hiếm có",
-    img: "images/red_wine_bottle.jpg",
-    tasting: {
-      color: "Đỏ garnet già",
-      nose: "Cherry đen, da thuộc, hương thảo mộc Tây Ban Nha",
-      palate: "Tinh tế, cân bằng hoàn hảo, đa tầng",
-      finish: "Kéo dài vô tận",
-    },
-    food: ["Jamón ibérico", "Chorizo", "Thịt cừu quay"],
-    tags: ["spanish", "luxury", "rare"],
-    stock: 6,
-  },
-  {
-    id: 11,
-    name: "Moët & Chandon Ice Impérial",
-    vintage: null,
-    region: "Pháp",
-    subregion: "Champagne",
-    type: "sparkling",
-    grape: "Pinot Noir / Chardonnay / Meunier",
-    abv: 12.0,
-    volume: "750ml",
-    price: 2200000,
-    oldPrice: 2600000,
-    score: 90,
-    rating: 4.5,
-    reviews: 521,
-    badge: "Sale 15%",
-    img: "images/champagne_bottle.jpg",
-    tasting: {
-      color: "Vàng nhạt với bọt nhỏ li ti",
-      nose: "Đào, lê, hoa nhài",
-      palate: "Ngọt mát, sủi bọt dịu, tươi trẻ",
-      finish: "Thanh mát, dứt khoát",
-    },
-    food: ["Đá bào trái cây", "Mousse chanh", "Cocktail party"],
-    tags: ["champagne", "party", "gift"],
-    stock: 80,
-  },
-  {
-    id: 12,
-    name: "Johnnie Walker Blue Label",
-    vintage: null,
-    region: "Scotland",
-    subregion: "Blended",
-    type: "whisky",
-    grape: null,
-    abv: 40.0,
-    volume: "750ml",
-    price: 5200000,
-    oldPrice: 5800000,
-    score: 92,
-    rating: 4.7,
-    reviews: 388,
-    badge: "Quà tặng",
-    img: "images/whisky_bottle.jpg",
-    tasting: {
-      color: "琥珀 vàng sâu",
-      nose: "Honey, vanilla, trái cây sấy khô",
-      palate: "Mượt mà, phong phú, vị khói nhẹ",
-      finish: "Ấm áp, dài",
-    },
-    food: ["Cigar", "Chocolate trắng", "Cá hồi xông khói"],
-    tags: ["whisky", "gift", "blended"],
-    stock: 45,
-  },
-  {
-    id: 13,
-    name: "Whispering Angel Rosé",
-    vintage: 2022,
-    region: "Pháp",
-    subregion: "Provence",
-    type: "rosé",
-    grape: "Grenache / Cinsault / Rolle",
-    abv: 13.0,
-    volume: "750ml",
-    price: 1450000,
-    oldPrice: 1700000,
-    score: 91,
-    rating: 4.6,
-    reviews: 276,
-    badge: "Mùa hè",
-    img: "images/rose_wine_bottle.jpg",
-    tasting: {
-      color: "Hồng phấn nhạt, trong suốt",
-      nose: "Dâu tây, đào trắng, hoa hồng",
-      palate: "Tươi, nhẹ nhàng, cân bằng tuyệt vời",
-      finish: "Sạch, dứt khoát",
-    },
-    food: ["Salad Niçoise", "Tôm nướng", "Phô mai dê"],
-    tags: ["rosé", "summer", "provence"],
-    stock: 65,
-  },
-  {
-    id: 14,
-    name: "Remy Martin XO",
-    vintage: null,
-    region: "Pháp",
-    subregion: "Cognac",
-    type: "brandy",
-    grape: null,
-    abv: 40.0,
-    volume: "700ml",
-    price: 4800000,
-    oldPrice: 5500000,
-    score: 94,
-    rating: 4.8,
-    reviews: 192,
-    badge: "Sang trọng",
-    img: "images/cognac_bottle.jpg",
-    tasting: {
-      color: "Amber đỏ sâu",
-      nose: "Mận khô, cam quýt, hoa jasmine, hương gỗ",
-      palate: "Mượt, ấm, vị trái cây chín và gia vị",
-      finish: "Rất dài, hoa quả và gỗ",
-    },
-    food: ["Foie gras", "Phô mai brie", "Socola truffle"],
-    tags: ["cognac", "brandy", "luxury", "gift"],
-    stock: 22,
-  },
-  {
-    id: 15,
-    name: "Gaja Barbaresco",
-    vintage: 2019,
-    region: "Ý",
-    subregion: "Piedmont",
-    type: "red",
-    grape: "Nebbiolo",
-    abv: 14.0,
-    volume: "750ml",
-    price: 7800000,
-    oldPrice: null,
-    score: 96,
-    rating: 4.8,
-    reviews: 109,
-    badge: "Cổ điển",
-    img: "images/red_wine_bottle.jpg",
-    tasting: {
-      color: "Đỏ garnet với viền cam",
-      nose: "Hoa hồng khô, cherry dại, nhựa trắng",
-      palate: "Đậm đà nhưng tinh tế, tanin mạnh mẽ",
-      finish: "Dài với hương hoa và đất",
-    },
-    food: ["Risotto nấm truffle", "Thịt bò hầm Barolo", "Phô mai Parmesan"],
-    tags: ["italian", "premium", "nebbiolo"],
-    stock: 14,
-  },
-  {
-    id: 16,
-    name: "Egon Müller Scharzhofberger Riesling TBA",
-    vintage: 2020,
-    region: "Đức",
-    subregion: "Mosel",
-    type: "white",
-    grape: "Riesling",
-    abv: 7.0,
-    volume: "375ml",
-    price: 22000000,
-    oldPrice: null,
-    score: 100,
-    rating: 5.0,
-    reviews: 23,
-    badge: "Quý hiếm",
-    img: "images/white_wine_bottle.jpg",
-    tasting: {
-      color: "Vàng mật ong óng ánh",
-      nose: "Mật ong, mơ sấy, cam quýt, khoáng chất",
-      palate: "Cực ngọt nhưng tươi, cân bằng siêu việt",
-      finish: "Vĩnh cửu, hơn 3 phút",
-    },
-    food: ["Foie gras", "Roquefort", "Bánh flan caramel"],
-    tags: ["germany", "dessert", "luxury", "rare"],
-    stock: 4,
-  },
-  {
-    id: 17,
-    name: "Screaming Eagle Cabernet",
-    vintage: 2016,
-    region: "Mỹ",
-    subregion: "Napa Valley",
-    type: "red",
-    grape: "Cabernet Sauvignon",
-    abv: 14.5,
-    volume: "750ml",
-    price: 75000000,
-    oldPrice: null,
-    score: 99,
-    rating: 5.0,
-    reviews: 31,
-    badge: "Huyền thoại",
-    img: "images/red_wine_bottle.jpg",
-    tasting: {
-      color: "Đỏ tím sậm huyền bí",
-      nose: "Cassis, mận đen, graphite, hương hoa violet",
-      palate: "Hoàn hảo, phức hợp vô song, tanin như nhung",
-      finish: "Bất tận, tinh khiết",
-    },
-    food: ["A5 Wagyu", "Lobster bisque", "Phô mai Époisses"],
-    tags: ["usa", "luxury", "cult", "rare"],
-    stock: 2,
-  },
-  {
-    id: 18,
-    name: "Torres Gran Coronas",
-    vintage: 2020,
-    region: "Tây Ban Nha",
-    subregion: "Penedès",
-    type: "red",
-    grape: "Cabernet Sauvignon / Tempranillo",
-    abv: 13.5,
-    volume: "750ml",
-    price: 650000,
-    oldPrice: 800000,
-    score: 89,
-    rating: 4.4,
-    reviews: 364,
-    badge: "Tiết kiệm",
-    img: "images/red_wine_bottle.jpg",
-    tasting: {
-      color: "Đỏ cherry tươi sáng",
-      nose: "Cherry, plum, hương thảo mộc",
-      palate: "Trung bình, tươi, dễ uống",
-      finish: "Vừa phải, trái cây",
-    },
-    food: ["Tapas", "Pizza", "Thịt nướng thông thường"],
-    tags: ["spanish", "everyday", "value"],
-    stock: 200,
-  },
-  {
-    id: 19,
-    name: "Cloudy Bay Te Koko",
-    vintage: 2020,
-    region: "New Zealand",
-    subregion: "Marlborough",
-    type: "white",
-    grape: "Sauvignon Blanc",
-    abv: 14.0,
-    volume: "750ml",
-    price: 1850000,
-    oldPrice: 2200000,
-    score: 93,
-    rating: 4.7,
-    reviews: 148,
-    badge: "Đặc biệt",
-    img: "images/white_wine_bottle.jpg",
-    tasting: {
-      color: "Vàng rơm đậm",
-      nose: "Bơ, đào vàng, vanilla, hương sồi tinh tế",
-      palate: "Phong phú, béo ngậy, phức hợp",
-      finish: "Dài và mượt mà",
-    },
-    food: ["Bơ tôm hùm", "Gà quay kem nấm", "Pasta carbonara"],
-    tags: ["white", "oaked", "premium"],
-    stock: 38,
-  },
-  {
-    id: 20,
-    name: "Château d'Yquem",
-    vintage: 2015,
-    region: "Pháp",
-    subregion: "Sauternes",
-    type: "dessert",
-    grape: "Sémillon / Sauvignon Blanc",
-    abv: 14.0,
-    volume: "375ml",
-    price: 8500000,
-    oldPrice: null,
-    score: 98,
-    rating: 4.9,
-    reviews: 76,
-    badge: "Vang ngọt đỉnh cao",
-    img: "images/dessert_wine_bottle.jpg",
-    tasting: {
-      color: "Vàng mật ong óng ánh",
-      nose: "Mơ sấy, mật ong, hoa acacia, gừng",
-      palate: "Ngọt ngào uy nghi, cân bằng hoàn hảo bởi độ acid",
-      finish: "Vô tận, mật hoa",
-    },
-    food: ["Foie gras", "Tôm hùm sốt bơ", "Phô mai Roquefort"],
-    tags: ["dessert", "luxury", "sauternes"],
-    stock: 9,
-  },
-  {
-    id: 21,
-    name: "Glenfiddich 18 Year",
-    vintage: null,
-    region: "Scotland",
-    subregion: "Speyside",
-    type: "whisky",
-    grape: null,
-    abv: 40.0,
-    volume: "700ml",
-    price: 2100000,
-    oldPrice: 2500000,
-    score: 91,
-    rating: 4.6,
-    reviews: 418,
-    badge: "Bán chạy",
-    img: "images/whisky_bottle.jpg",
-    tasting: {
-      color: "Vàng amber ấm",
-      nose: "Đào, lê, oak, mật ong nhẹ",
-      palate: "Mượt mà, trái cây ngọt, vanilla",
-      finish: "Ấm áp, vừa phải",
-    },
-    food: ["Chocolate sữa", "Hạt điều rang", "Phô mai cheddar"],
-    tags: ["whisky", "single-malt", "everyday"],
-    stock: 55,
-  },
-  {
-    id: 22,
-    name: "Clos du Val Estate Chardonnay",
-    vintage: 2021,
-    region: "Mỹ",
-    subregion: "Napa Valley",
-    type: "white",
-    grape: "Chardonnay",
-    abv: 14.2,
-    volume: "750ml",
-    price: 1200000,
-    oldPrice: 1450000,
-    score: 90,
-    rating: 4.5,
-    reviews: 187,
-    badge: null,
-    img: "images/white_wine_bottle.jpg",
-    tasting: {
-      color: "Vàng rơm sáng",
-      nose: "Táo vàng, bơ, vanilla, sồi nhẹ",
-      palate: "Béo ngậy vừa phải, cân bằng tốt, tươi mát",
-      finish: "Trung bình dài, trái cây",
-    },
-    food: ["Gà áp chảo bơ chanh", "Cá trắng nướng", "Risotto hải sản"],
-    tags: ["white", "usa", "chardonnay"],
-    stock: 42,
-  },
-  {
-    id: 23,
-    name: "Pio Cesare Barolo DOCG",
-    vintage: 2018,
-    region: "Ý",
-    subregion: "Barolo",
-    type: "red",
-    grape: "Nebbiolo",
-    abv: 14.5,
-    volume: "750ml",
-    price: 3200000,
-    oldPrice: 3800000,
-    score: 93,
-    rating: 4.7,
-    reviews: 134,
-    badge: "Giảm 15%",
-    img: "images/red_wine_bottle.jpg",
-    tasting: {
-      color: "Đỏ garnet viền cam nhạt",
-      nose: "Hoa hồng khô, cherry đen, nhựa thơm, đất",
-      palate: "Tanin mạnh nhưng thanh lịch, phức hợp",
-      finish: "Dài, khô và khoáng",
-    },
-    food: ["Braised beef", "Truffle pasta", "Phô mai Parmigiano"],
-    tags: ["italian", "barolo", "premium"],
-    stock: 27,
-  },
-  {
-    id: 24,
-    name: "Baileys Original Irish Cream",
-    vintage: null,
-    region: "Ireland",
-    subregion: null,
-    type: "liqueur",
-    grape: null,
-    abv: 17.0,
-    volume: "700ml",
-    price: 650000,
-    oldPrice: 750000,
-    score: 88,
-    rating: 4.5,
-    reviews: 862,
-    badge: "Yêu thích",
-    img: "images/cognac_bottle.jpg",
-    tasting: {
-      color: "Nâu kem mịn màng",
-      nose: "Kem tươi, chocolate sữa, whisky nhẹ",
-      palate: "Ngọt ngào, béo, êm dịu",
-      finish: "Ngắn, ngọt và kem",
-    },
-    food: ["Bánh tiramisu", "Ice cream", "Cà phê Irish"],
-    tags: ["liqueur", "everyday", "gift", "dessert"],
-    stock: 150,
-  },
-  {
-    id: 25,
-    name: "Hennessy VSOP Privilege",
-    vintage: null,
-    region: "Pháp",
-    subregion: "Cognac",
-    type: "brandy",
-    grape: null,
-    abv: 40.0,
-    volume: "700ml",
-    price: 1900000,
-    oldPrice: 2200000,
-    score: 90,
-    rating: 4.6,
-    reviews: 534,
-    badge: "Phổ biến",
-    img: "images/cognac_bottle.jpg",
-    tasting: {
-      color: "Amber vàng ấm áp",
-      nose: "Hoa quả nướng, hương gỗ, vanilla",
-      palate: "Mượt mà, cân bằng, ấm và tinh tế",
-      finish: "Dài vừa, dứt khoát",
-    },
-    food: ["Sô cô la đen", "Trái cây sấy", "Phô mai gruyère"],
-    tags: ["cognac", "brandy", "everyday", "gift"],
-    stock: 90,
-  },
-  {
-    id: 26,
-    name: "Masi Amarone della Valpolicella",
-    vintage: 2017,
-    region: "Ý",
-    subregion: "Veneto",
-    type: "red",
-    grape: "Corvina / Molinara / Rondinella",
-    abv: 15.5,
-    volume: "750ml",
-    price: 2800000,
-    oldPrice: 3200000,
-    score: 94,
-    rating: 4.7,
-    reviews: 178,
-    badge: "Đậm đà",
-    img: "images/red_wine_bottle.jpg",
-    tasting: {
-      color: "Đỏ ruby đậm sẫm gần như tím",
-      nose: "Anh đào đen, mận khô, socola đen, thuốc lá",
-      palate: "Đậm đà, đầy đặn, phức hợp, tanin mềm",
-      finish: "Rất dài, ấm",
-    },
-    food: ["Thịt bò hầm", "Phô mai Pecorino", "Risotto thịt"],
-    tags: ["italian", "amarone", "bold"],
-    stock: 32,
-  },
-  {
-    id: 27,
-    name: "Kumeu River Chardonnay",
-    vintage: 2021,
-    region: "New Zealand",
-    subregion: "Auckland",
-    type: "white",
-    grape: "Chardonnay",
-    abv: 13.5,
-    volume: "750ml",
-    price: 1100000,
-    oldPrice: 1300000,
-    score: 93,
-    rating: 4.6,
-    reviews: 99,
-    badge: null,
-    img: "images/white_wine_bottle.jpg",
-    tasting: {
-      color: "Vàng xanh nhạt trong suốt",
-      nose: "Táo xanh, nho, hoa trắng, sồi nhẹ",
-      palate: "Tươi sáng, khoáng, ít gỗ, thanh lịch",
-      finish: "Dài và sạch",
-    },
-    food: ["Cá sole áp chảo", "Tôm hùm không sốt", "Salad rau xanh"],
-    tags: ["white", "newzealand", "chardonnay"],
-    stock: 44,
-  },
-  {
-    id: 28,
-    name: "Caymus Cabernet Sauvignon",
-    vintage: 2021,
-    region: "Mỹ",
-    subregion: "Napa Valley",
-    type: "red",
-    grape: "Cabernet Sauvignon",
-    abv: 14.8,
-    volume: "750ml",
-    price: 3600000,
-    oldPrice: 4200000,
-    score: 93,
-    rating: 4.7,
-    reviews: 289,
-    badge: "Napa Favorite",
-    img: "images/red_wine_bottle.jpg",
-    tasting: {
-      color: "Đỏ ruby đậm",
-      nose: "Mứt mâm xôi, anh đào đen, vanilla, sồi ngọt",
-      palate: "Đầy đặn, mềm mại, dễ tiếp cận, trái cây chín",
-      finish: "Dài ấm, trái cây và gỗ",
-    },
-    food: ["Ribeye steak", "Bò bít tết", "BBQ sườn non"],
-    tags: ["usa", "napa", "premium"],
-    stock: 35,
-  },
-];
+// Cơ sở dữ liệu sản phẩm (Đã gỡ bỏ dữ liệu cứng, sử dụng API hoàn toàn)
+const PRODUCTS = [];
 
 // ─── BẢN ĐỒ CỜ QUỐC GIA ───────────────────────────────────────
 const FLAGS = {
@@ -1055,60 +298,17 @@ function renderProductListing() {
   if (state.filters.vintages?.length)
     params.vintage = state.filters.vintages.join(",");
 
-  const apiCall =
+  const apiPromise =
     typeof window.VINOVA_API !== "undefined"
       ? window.VINOVA_API.products.list(params).then((d) => d.products)
-      : Promise.reject();
+      : Promise.reject(new Error("API not available"));
 
-  apiCall
-    .catch(() => {
-      let products = [...PRODUCTS];
-      if (state.filters.types?.length)
-        products = products.filter((p) => state.filters.types.includes(p.type));
-      if (state.filters.regions?.length)
-        products = products.filter((p) =>
-          state.filters.regions.includes(p.region),
-        );
-      if (state.filters.ratings?.length) {
-        const minRating = Math.min(...state.filters.ratings.map(Number));
-        products = products.filter(
-          (p) => p.rating >= minRating || p.score >= minRating,
-        );
-      }
-      if (
-        state.filters.priceMax !== undefined &&
-        state.filters.priceMax < 100000000
-      ) {
-        products = products.filter((p) => p.price <= state.filters.priceMax);
-      }
-      if (state.filters.vintages?.length) {
-        const selected = state.filters.vintages;
-        products = products.filter((p) => {
-          if (!p.vintage) return false;
-          const v = parseInt(p.vintage, 10);
-          return selected.some((range) => {
-            if (range === "2020-2022") return v >= 2020 && v <= 2022;
-            if (range === "2015-2019") return v >= 2015 && v <= 2019;
-            if (range === "2010-2014") return v >= 2010 && v <= 2014;
-            if (range === "pre-2010") return v < 2010;
-            return false;
-          });
-        });
-      }
-
-      if (sort === "price-asc") products.sort((a, b) => a.price - b.price);
-      else if (sort === "price-desc")
-        products.sort((a, b) => b.price - a.price);
-      else if (sort === "rating") products.sort((a, b) => b.rating - a.rating);
-      else if (sort === "newest")
-        products.sort((a, b) => (b.vintage || 0) - (a.vintage || 0));
-      return products;
-    })
+  apiPromise
     .then((products) => {
       products = products.map((p) => ({
         ...p,
-        oldPrice: p.oldPrice !== undefined ? p.oldPrice : p.old_price,
-        reviews: p.reviews !== undefined ? p.reviews : p.reviews_count,
+        oldPrice: p.oldPrice ?? p.old_price,
+        reviews: p.reviews ?? p.reviews_count,
         tasting: p.tasting || { color: "", nose: "", palate: "", finish: "" },
         food: Array.isArray(p.food_pairing) ? p.food_pairing : p.food || [],
       }));
@@ -1117,6 +317,12 @@ function renderProductListing() {
       container.innerHTML = products.map((p) => productCardHTML(p)).join("");
       attachProductCardEvents();
       updateFilterCounts();
+    })
+    .catch((err) => {
+      container.innerHTML = `<div style="text-align:center;padding:3rem;color:var(--c-error)">
+        <div style="font-size:2rem">🍷</div>
+        <p>Lỗi khi tải sản phẩm: ${err.message || "Vui lòng thử lại sau"}</p>
+      </div>`;
     });
 }
 
@@ -1232,9 +438,9 @@ function renderProductDetail(id) {
       ? window.VINOVA_API.products
           .get(id)
           .then((d) => ({ ...d.product, reviews_list: d.reviews }))
-      : Promise.reject();
+      : Promise.reject(new Error("API not available"));
+
   apiPromise
-    .catch(() => PRODUCTS.find((x) => x.id === id))
     .then((p) => {
       if (!p) {
         container.innerHTML =
@@ -1266,7 +472,7 @@ function renderProductDetail(id) {
 
       container.innerHTML = `
   <div class="product-detail animate-up">
-    // Bộ sưu tập ảnh (Gallery)
+    <!-- Bộ sưu tập ảnh (Gallery) -->
     <div class="product-gallery">
       <div class="gallery-main">
         <img src="${p.img}" alt="${p.name}" id="galleryMain" onerror="this.src='images/placeholder.jpg'">
@@ -2288,34 +1494,74 @@ window.updateOrderStatus = async function (id, status) {
   }
 };
 
+let adminProductSearchTimer;
+window.debouncedRenderAdminProducts = () => {
+  clearTimeout(adminProductSearchTimer);
+  adminProductSearchTimer = setTimeout(renderAdminProducts, 300);
+};
+
 async function renderAdminProducts() {
   if (typeof window.VINOVA_API === "undefined") return;
   try {
-    const data = await window.VINOVA_API.products.list({
-      limit: 100,
-      sort: "id-asc",
-    });
+    const q = document.getElementById("adminProductSearchInput")?.value.trim() || "";
+    const type = document.getElementById("adminProductTypeFilter")?.value || "";
+    
+    let data;
+    if (q) {
+      data = await window.VINOVA_API.products.search(q);
+    } else {
+      data = await window.VINOVA_API.products.list({ limit: 1000, sort: "id-asc" });
+    }
+    
+    let products = data.products || [];
+    if (type) {
+      products = products.filter(p => (p.type || "").toLowerCase().includes(type.toLowerCase()));
+    }
+
     const tbody = document.getElementById("admin-products-tbody");
     if (tbody) {
-      tbody.innerHTML = data.products
-        .map(
-          (p) => `
-            <tr>
-              <td>#${p.id}</td>
-              <td>${p.name}</td>
-              <td>${p.region || "-"}</td>
-              <td style="color:var(--c-gold-light)">${formatPrice(p.price)}</td>
-              <td style="color:${p.stock <= 5 ? "var(--c-error)" : "inherit"};font-weight:600">${p.stock}</td>
-              <td><span class="badge badge--green">Hoạt động</span></td>
-              <td>
-                <button class="btn btn--sm btn--outline" onclick="window.navigate('product-detail', {id: ${p.id}})">Xem</button>
-              </td>
-            </tr>`,
-        )
-        .join("");
+      if (products.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:1rem;color:var(--c-muted)">Không tìm thấy sản phẩm nào</td></tr>`;
+      } else {
+        tbody.innerHTML = products
+          .map(
+            (p) => `
+              <tr>
+                <td>#${p.id}</td>
+                <td>${p.name}</td>
+                <td>${p.region || "-"}</td>
+                <td style="color:var(--c-gold-light)">${formatPrice(p.price)}</td>
+                <td style="color:${p.stock <= 5 ? "var(--c-error)" : "inherit"};font-weight:600">${p.stock}</td>
+                <td>
+                  ${p.is_active === 1 
+                    ? '<span class="badge badge--green">Hoạt động</span>' 
+                    : '<span class="badge" style="background:rgba(255,255,255,0.1);color:var(--c-muted)">Đã ẩn</span>'}
+                </td>
+                <td>
+                  <div style="display:flex;gap:0.5rem">
+                    <button class="btn btn--sm btn--outline" onclick="window.navigate('product-detail', {id: ${p.id}})">Xem</button>
+                    <button class="btn btn--sm btn--outline" onclick="openProductModal(${p.id})">Sửa</button>
+                    <button class="btn btn--sm btn--outline" style="color:var(--c-error);border-color:rgba(239, 68, 68, 0.2)" onclick="deleteAdminProduct(${p.id})">Xóa</button>
+                  </div>
+                </td>
+              </tr>`,
+          )
+          .join("");
+      }
     }
   } catch (err) {
     console.error(err);
+  }
+}
+
+async function deleteAdminProduct(id) {
+  if (!confirm("Bạn có chắc chắn muốn xóa sản phẩm này không?")) return;
+  try {
+    await window.VINOVA_API.products.delete(id);
+    window.showToast("Đã xóa sản phẩm thành công", "success");
+    renderAdminProducts();
+  } catch (err) {
+    window.showToast(err.message, "error");
   }
 }
 
@@ -2323,7 +1569,7 @@ async function renderAdminInventory() {
   if (typeof window.VINOVA_API === "undefined") return;
   try {
     const data = await window.VINOVA_API.products.list({
-      limit: 100,
+      limit: 1000,
       sort: "id-asc",
     });
     const tbody = document.getElementById("admin-inventory-full-tbody");
@@ -2442,12 +1688,48 @@ window.deletePromo = (idx) => {
 };
 
 // ─── ADMIN PRODUCT MODAL ────────────────────────────────────────────────
-window.openProductModal = () =>
-  document.getElementById("productModal")?.classList.add("open");
+window.openProductModal = async (id = null) => {
+  const modal = document.getElementById("productModal");
+  const title = document.getElementById("productModalTitle");
+  const editIdInput = document.getElementById("editingProductId");
+  if (!modal) return;
+
+  // Clear all inputs first
+  modal.querySelectorAll("input, textarea").forEach((el) => (el.value = ""));
+  modal.querySelector("select").value = "red";
+
+  if (id) {
+    if (title) title.textContent = "Sửa sản phẩm";
+    if (editIdInput) editIdInput.value = id;
+    try {
+      const { product: p } = await window.VINOVA_API.products.get(id);
+      document.getElementById("newProductName").value = p.name || "";
+      document.getElementById("newProductRegion").value = p.region || "";
+      document.getElementById("newProductType").value = p.type || "red";
+      document.getElementById("newProductGrape").value = p.grape || "";
+      document.getElementById("newProductPrice").value = p.price || 0;
+      document.getElementById("newProductStock").value = p.stock || 0;
+      document.getElementById("newProductAbv").value = p.abv || "";
+      document.getElementById("newProductImg").value = p.img || "";
+      document.getElementById("newProductDesc").value = p.description || "";
+    } catch (err) {
+      window.showToast("Không thể lấy thông tin sản phẩm", "error");
+      return;
+    }
+  } else {
+    if (title) title.textContent = "Thêm sản phẩm mới";
+    if (editIdInput) editIdInput.value = "";
+    document.getElementById("newProductStock").value = "10";
+  }
+
+  modal.classList.add("open");
+};
+
 window.closeProductModal = () =>
   document.getElementById("productModal")?.classList.remove("open");
 
 window.submitNewProduct = async () => {
+  const editId = document.getElementById("editingProductId")?.value;
   const name = document.getElementById("newProductName")?.value.trim();
   const region = document.getElementById("newProductRegion")?.value.trim();
   const type = document.getElementById("newProductType")?.value;
@@ -2477,17 +1759,16 @@ window.submitNewProduct = async () => {
   };
 
   try {
-    const res = await window.VINOVA_API.products.create(payload);
-    window.showToast("Thêm sản phẩm thành công!", "success");
+    if (editId) {
+      await window.VINOVA_API.products.update(editId, payload);
+      window.showToast("Cập nhật sản phẩm thành công!", "success");
+    } else {
+      await window.VINOVA_API.products.create(payload);
+      window.showToast("Thêm sản phẩm thành công!", "success");
+    }
     window.closeProductModal();
-    // Clear inputs
-    document
-      .querySelectorAll("#productModal input, #productModal textarea")
-      .forEach((el) => (el.value = ""));
-    document.getElementById("newProductStock").value = "10"; // reset default
-
-    // Thông tin sản phẩm
     if (typeof renderAdminInventory === "function") renderAdminInventory();
+    if (typeof renderAdminProducts === "function") renderAdminProducts();
   } catch (err) {
     window.showToast(err.message, "error");
   }
@@ -2560,18 +1841,9 @@ function initSearch() {
             ...p,
             oldPrice: p.old_price,
           }));
-        } catch {
-          /* fallback */
+        } catch (err) {
+          console.error("Search API error:", err);
         }
-      }
-      if (!matched.length) {
-        const ql = q.toLowerCase();
-        matched = PRODUCTS.filter(
-          (p) =>
-            p.name.toLowerCase().includes(ql) ||
-            p.region.toLowerCase().includes(ql) ||
-            (p.grape || "").toLowerCase().includes(ql),
-        ).slice(0, 5);
       }
       if (!matched.length) {
         results.innerHTML = `<div style="padding:1rem;color:var(--c-muted);font-size:.88rem">Không tìm thấy kết quả</div>`;
@@ -2620,12 +1892,15 @@ document.addEventListener("DOMContentLoaded", () => {
             )
         : Promise.reject();
     loadFeatured
-      .catch(() => PRODUCTS.slice(0, 4))
       .then((products) => {
         featuredContainer.innerHTML = products
           .map((p) => productCardHTML(p))
           .join("");
         attachProductCardEvents();
+      })
+      .catch((err) => {
+        console.error("Featured products error:", err);
+        featuredContainer.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--c-muted)">Không thể tải sản phẩm nổi bật</div>';
       });
   }
   // Navigate to hash page
@@ -2649,3 +1924,68 @@ document.addEventListener("DOMContentLoaded", () => {
     "color:#c9a84c;font-size:1.2rem;font-weight:bold",
   );
 });
+
+window.applyPromo = () => {
+  const c = document.getElementById("promoCode")?.value.trim().toUpperCase();
+  const statePromos = JSON.parse(
+    localStorage.getItem("vinova_promos") ||
+      '[{"code":"VINOVA10","discount":10,"active":true}]',
+  );
+  const promo = statePromos.find((p) => p.code === c && p.active);
+  if (promo) {
+    state.appliedPromo = promo;
+    if (typeof updateOrderSummary === "function") updateOrderSummary();
+    showToast(`Áp dụng mã giảm ${promo.discount}% thành công!`, "success");
+  } else {
+    state.appliedPromo = null;
+    if (typeof updateOrderSummary === "function") updateOrderSummary();
+    showToast("Mã không hợp lệ hoặc đã hết hạn", "error");
+  }
+};
+
+window.resetFilters = () => {
+  state.filters = {
+    types: [],
+    regions: [],
+    grapes: [],
+    priceMin: 0,
+    priceMax: 100000000,
+    abvMin: 0,
+    abvMax: 60,
+    ratings: [],
+    vintages: [],
+  };
+  document
+    .querySelectorAll(".filter-option input")
+    .forEach((cb) => (cb.checked = false));
+  const pf = document.getElementById("priceFilter");
+  if (pf) {
+    pf.value = 100000000;
+    const pl = document.getElementById("priceMaxLabel");
+    if (pl) pl.textContent = "100M₫";
+  }
+  renderProductListing();
+  showToast("Đã xóa bộ lọc", "info");
+};
+
+window.filterByType = (type, btn) => {
+  document.querySelectorAll(".section--sm .btn").forEach((b) => {
+    b.className = b === btn ? "btn btn--primary" : "btn btn--ghost";
+  });
+  state.filters.types = type === "all" ? [] : [type];
+  navigate("products");
+};
+
+window.updateSelectionState = (name) => {
+  document.querySelectorAll(`input[name="${name}"]`).forEach((input) => {
+    const label = input.closest("label");
+    if (!label) return;
+    if (input.checked) {
+      label.style.background = "rgba(201,168,76,.06)";
+      label.style.border = "1.5px solid var(--c-gold)";
+    } else {
+      label.style.background = "var(--c-surface2)";
+      label.style.border = "1px solid var(--c-border)";
+    }
+  });
+};

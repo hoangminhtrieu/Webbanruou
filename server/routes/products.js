@@ -11,6 +11,19 @@ const {
   validateReview,
 } = require("../middleware/validate");
 
+// Helper: Parse JSON fields for a product object
+const parseJSONFields = (p) => {
+  if (!p) return p;
+  ["tasting_notes", "food_pairing", "tags"].forEach((field) => {
+    try {
+      if (typeof p[field] === "string") p[field] = JSON.parse(p[field]);
+    } catch {
+      p[field] = field === "tasting_notes" ? {} : [];
+    }
+  });
+  return p;
+};
+
 // GET /api/products/filter-counts
 router.get("/filter-counts", (req, res) => {
   const db = getDB();
@@ -89,7 +102,7 @@ router.get("/", validateProductFilter, (req, res) => {
   sql += " ORDER BY " + (sortMap[req.query.sort] || "reviews_count DESC");
 
   const page = Math.max(1, +req.query.page || 1);
-  const limit = Math.min(50, +req.query.limit || 20);
+  const limit = Math.min(1000, +req.query.limit || 20);
   const offset = (page - 1) * limit;
 
   const total =
@@ -100,17 +113,7 @@ router.get("/", validateProductFilter, (req, res) => {
     .prepare(sql + " LIMIT ? OFFSET ?")
     .all(...params, limit, offset);
 
-  products.forEach((p) => {
-    try {
-      p.tasting_notes = JSON.parse(p.tasting_notes);
-    } catch {}
-    try {
-      p.food_pairing = JSON.parse(p.food_pairing);
-    } catch {}
-    try {
-      p.tags = JSON.parse(p.tags);
-    } catch {}
-  });
+  products.forEach(parseJSONFields);
 
   res.json({ products, total, page, limit, pages: Math.ceil(total / limit) });
 });
@@ -142,15 +145,7 @@ router.get("/:id", (req, res) => {
     .prepare("SELECT * FROM products WHERE id = ? AND is_active = 1")
     .get(req.params.id);
   if (!p) return res.status(404).json({ error: "Sản phẩm không tồn tại" });
-  try {
-    p.tasting_notes = JSON.parse(p.tasting_notes);
-  } catch {}
-  try {
-    p.food_pairing = JSON.parse(p.food_pairing);
-  } catch {}
-  try {
-    p.tags = JSON.parse(p.tags);
-  } catch {}
+  parseJSONFields(p);
 
   const reviews = db
     .prepare(
@@ -200,10 +195,10 @@ router.post("/", authMiddleware, adminMiddleware, (req, res) => {
     .run(
       name,
       region,
-      subregion,
+      subregion || null,
       type,
-      grape,
-      abv,
+      grape || null,
+      abv || null,
       volume || "750ml",
       price,
       old_price || null,

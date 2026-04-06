@@ -73,7 +73,7 @@ const validateProductFilter = [
   query("minPrice").optional().isInt({ min: 0 }),
   query("maxPrice").optional().isInt({ min: 0 }),
   query("minScore").optional().isInt({ min: 50, max: 100 }),
-  query("limit").optional().isInt({ min: 1, max: 100 }),
+  query("limit").optional().isInt({ min: 1, max: 1000 }),
   query("offset").optional().isInt({ min: 0 }),
   query("sort")
     .optional()

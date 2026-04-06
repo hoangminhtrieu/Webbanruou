@@ -3,7 +3,7 @@
 // Connects the frontend to the Node.js backend
 // ============================================================
 
-const API_BASE = "http://localhost:3001/api";
+const API_BASE = "http://localhost:5000/api";
 
 // ─── Core fetch wrapper ───────────────────────────────────────
 async function apiFetch(endpoint, options = {}) {
@@ -268,19 +268,7 @@ window.doRegister = async function () {
 };
 
 // Load products from API instead of static data
-async function loadProductsFromAPI(filters = {}) {
-  try {
-    const data = await API.products.list(filters);
-    return data.products.map((p) => ({
-      ...p,
-      oldPrice: p.old_price,
-      reviews: p.reviews_count,
-    }));
-  } catch {
-    // Fallback to static PRODUCTS array if server not available
-    return typeof PRODUCTS !== "undefined" ? PRODUCTS : [];
-  }
-}
+// Note: loadProductsFromAPI was removed as app.js now uses VINOVA_API directly.
 
 // Checkout with real API + VNPay redirect
 window.checkoutWithVNPay = async function (orderData) {
